@@ -15,8 +15,9 @@ export const API = {
     logout: '/auth/logout', // POST → 204
   },
   nfts: {
-    list: '/nfts', // GET NftListParams (query) → Page<NftSummary>
+    list: '/nfts', // GET NftListParams (query; listas como a,b) → Page<NftSummary>
     highlights: '/nfts/highlights', // GET → Highlights
+    facets: '/nfts/facets', // GET → CatalogFacets
     detail: (idOrSlug: string) => `/nfts/${encodeURIComponent(idOrSlug)}`, // GET → Nft | 404
   },
   favorites: {

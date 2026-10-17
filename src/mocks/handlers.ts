@@ -64,6 +64,10 @@ export const handlers = [
     route(() => json(catalog.getHighlights())),
   ),
   http.get(
+    apiPath(API.nfts.facets),
+    route(() => json(catalog.getFacets())),
+  ),
+  http.get(
     apiPath(API.nfts.list),
     route(({ request }) => {
       const params = catalog.parseListParams(new URL(request.url).searchParams)

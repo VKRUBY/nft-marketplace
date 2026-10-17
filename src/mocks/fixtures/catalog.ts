@@ -1,143 +1,238 @@
-import type { Collection, Creator, Edition, Nft, NftCategory, NftImage, NftRarity, Network } from '@/contracts/domain'
+import type { Collection, Creator, Edition, EditionKind, Network, Nft, NftCategory, NftImage, Review } from '@/contracts/domain'
+import { NETWORKS } from '@/contracts/networks'
 import { fromWei, minEth, toWei } from '@/shared/eth'
 import { createRng } from '../rng'
 
 /**
- * Catálogo determinístico: 48 NFTs com variedade de categoria, raridade,
- * preço, disponibilidade e edições, suficiente para exercitar busca,
- * filtros combinados, ordenação e paginação (4 páginas de 12).
+ * Catálogo determinístico: 48 NFTs (4 páginas de 12) com variedade de
+ * coleção, rede, preço, disponibilidade, edições e avaliações — suficiente
+ * para exercitar busca, filtros combinados, ordenação e paginação.
  *
- * As imagens ficam em /public/assets/nfts e são resolvidas só aqui,
- * para que a troca de assets não toque no restante dos mocks.
+ * Os 10 primeiros reproduzem os itens desenhados no Figma (nomes, preços,
+ * tokens). As imagens são os assets exportados do Figma e ficam em
+ * /public/assets/nfts; só este arquivo conhece os caminhos.
  */
 
-export const NFT_IMAGE_COUNT = 12
+type Art = 'emerald' | 'sage' | 'ivory' | 'golden'
 
-export function nftImage(index: number, name: string): NftImage {
-  const n = (index % NFT_IMAGE_COUNT) + 1
+const ART: Record<Art, { file: string; subject: string }> = {
+  emerald: { file: 'emerald', subject: 'macaco de óculos redondos e jaqueta varsity verde' },
+  sage: { file: 'sage', subject: 'gorila de chapéu bucket e moletom lilás' },
+  ivory: { file: 'ivory', subject: 'chimpanzé de blazer creme e gola alta verde' },
+  golden: { file: 'golden', subject: 'orangotango de fones de ouvido e jaqueta bege' },
+}
+
+export function nftImage(art: Art, name: string, variant = 0): NftImage {
+  const base = `/assets/nfts/${ART[art].file}`
   return {
-    url: `/assets/nfts/nft-${String(n).padStart(2, '0')}.webp`,
-    alt: `Ilustração do NFT ${name}`,
-    width: 800,
-    height: 800,
+    url: `${base}-750.webp`,
+    srcSet: `${base}-400.webp 400w, ${base}-750.webp 750w`,
+    alt: variant === 0 ? `${name}: ilustração de um ${ART[art].subject}` : `${name}: vista ${variant + 1} da obra`,
+    width: 750,
+    height: 750,
   }
 }
 
 const COLLECTIONS: Collection[] = [
-  { id: 'col_golden', name: 'Golden Primates', verified: true },
-  { id: 'col_ivory', name: 'Ivory Court', verified: true },
-  { id: 'col_jungle', name: 'Jungle Frequencies', verified: false },
-  { id: 'col_mint', name: 'GreenMint Genesis', verified: true },
+  { id: 'col_kurio_apes', name: 'Kurio Apes' },
+  { id: 'col_kurio_editions', name: 'Kurio Editions' },
+  { id: 'col_jungle', name: 'Jungle Frequencies' },
+  { id: 'col_ivory', name: 'Ivory Court' },
 ]
 
 const CREATORS: Creator[] = [
-  { id: 'cr_lumi', name: 'Lumi Arts', handle: 'lumiarts', avatarUrl: '/assets/avatars/creator-1.webp', verified: true },
-  { id: 'cr_oko', name: 'Okô Studio', handle: 'okostudio', avatarUrl: '/assets/avatars/creator-2.webp', verified: true },
-  { id: 'cr_rafa', name: 'Rafa Tavares', handle: 'rafatavares', avatarUrl: '/assets/avatars/creator-3.webp', verified: false },
-  { id: 'cr_nina', name: 'Nina Kode', handle: 'ninakode', avatarUrl: '/assets/avatars/creator-4.webp', verified: true },
+  { id: 'cr_nova', name: 'Nova Sato', handle: 'novasato' },
+  { id: 'cr_oko', name: 'Okô Studio', handle: 'okostudio' },
+  { id: 'cr_rafa', name: 'Rafa Tavares', handle: 'rafatavares' },
+  { id: 'cr_nina', name: 'Nina Kode', handle: 'ninakode' },
 ]
 
-const STEMS = [
-  'Golden Beat',
-  'Golden Signal',
-  'Ivory Baron',
-  'Jade Hustler',
-  'Velvet Monk',
-  'Neon Shaman',
-  'Copper Drift',
-  'Mint Sentinel',
-  'Amber Rogue',
-  'Silent Tempo',
-  'Cosmic Banter',
-  'Urban Elder',
-]
-
-const CATEGORIES: NftCategory[] = ['art', 'collectible', 'music', 'photography', 'gaming', 'pfp']
-const RARITIES: NftRarity[] = ['common', 'common', 'rare', 'rare', 'epic', 'legendary']
-const NETWORKS: Network[] = ['ethereum', 'ethereum', 'polygon', 'base']
-const EDITION_LABELS = ['Edição Gênesis', 'Edição Ouro', 'Edição Prata']
-const TRAITS = {
-  Fundo: ['Creme', 'Sálvia', 'Menta', 'Areia'],
-  Acessório: ['Fones', 'Chapéu bucket', 'Óculos redondos', 'Brinco de ouro', 'Nenhum'],
-  Traje: ['Jaqueta varsity', 'Moletom', 'Gola alta', 'Blazer'],
-  Humor: ['Sereno', 'Confiante', 'Curioso', 'Sonhador'],
+interface Seed {
+  stem: string
+  number: number
+  art: Art
+  priceCents: number
+  compareAtCents?: number
+  attributes: string[]
 }
 
-const DESCRIPTION =
-  'Parte de uma série de retratos digitais de primatas com personalidade própria. Cada edição dá ao colecionador a posse verificável do token na rede indicada e acesso a lançamentos futuros da coleção.'
+/** Itens do Figma, na ordem em que aparecem no Início. */
+const FIGMA_ITEMS: Seed[] = [
+  { stem: 'Emerald Ape', number: 42, art: 'emerald', priceCents: 119, attributes: ['Óculos', 'Esmeralda', 'Raro'] },
+  { stem: 'Sage Nomad', number: 9, art: 'sage', priceCents: 169, attributes: ['Chapéu bucket', 'Moletom', 'Comum'] },
+  { stem: 'Neon Vessel', number: 552, art: 'ivory', priceCents: 199, compareAtCents: 229, attributes: ['Blazer', 'Brinco', 'Raro'] },
+  { stem: 'Cosmic Bloom', number: 118, art: 'sage', priceCents: 129, attributes: ['Chapéu bucket', 'Cordão', 'Comum'] },
+  { stem: 'Violet Nomad', number: 314, art: 'sage', priceCents: 139, attributes: ['Moletom lilás', 'Sereno', 'Incomum'] },
+  { stem: 'Ivory Baron', number: 88, art: 'ivory', priceCents: 179, attributes: ['Gola alta', 'Brinco de ouro', 'Raro'] },
+  { stem: 'Golden Beat', number: 207, art: 'golden', priceCents: 99, attributes: ['Fones', 'Jaqueta bege', 'Comum'] },
+  { stem: 'Golden Sage', number: 233, art: 'golden', priceCents: 149, attributes: ['Fones', 'Sálvia', 'Incomum'] },
+  { stem: 'Golden Signal', number: 160, art: 'golden', priceCents: 39, attributes: ['Fones', 'Fundo menta', 'Comum'] },
+  { stem: 'Velvet Monk', number: 71, art: 'sage', priceCents: 259, compareAtCents: 299, attributes: ['Moletom', 'Contemplativo', 'Épico'] },
+]
+
+const MORE_STEMS: Array<[string, Art]> = [
+  ['Jade Hustler', 'emerald'],
+  ['Copper Drift', 'golden'],
+  ['Mint Sentinel', 'emerald'],
+  ['Amber Rogue', 'golden'],
+  ['Silent Tempo', 'ivory'],
+  ['Urban Elder', 'sage'],
+  ['Onyx Dandy', 'ivory'],
+  ['Lilac Drifter', 'sage'],
+]
+
+const CATEGORY_CYCLE: NftCategory[] = [
+  'digital_art',
+  'digital_art',
+  'collectible',
+  'music',
+  'art_3d',
+  'digital_art',
+  'photography',
+  'generative',
+  'gaming',
+  'subscription',
+  'utility',
+  'collectible',
+]
+const NETWORK_CYCLE: Network[] = ['ethereum', 'ethereum', 'polygon', 'solana', 'ethereum', 'polygon']
+
+const REVIEW_TEMPLATES = [
+  { rating: 5, comment: 'Arte impecável e entrega instantânea na carteira. Já é a peça favorita da coleção.' },
+  { rating: 5, comment: 'Os detalhes em alta resolução são ainda melhores do que na prévia.' },
+  { rating: 4, comment: 'Ótima obra; só queria que a edição 1/10 tivesse mais unidades.' },
+  { rating: 5, comment: 'Procedência clara e metadados completos. Recomendo.' },
+  { rating: 4, comment: 'Bonito e bem acabado. A comunidade da coleção é muito ativa.' },
+  { rating: 3, comment: 'Gostei, mas a taxa de rede no dia da compra estava alta.' },
+]
+const REVIEWERS = ['Lia M.', 'Caio R.', 'Bea S.', 'Theo P.', 'Duda A.', 'Rui F.']
+
+function editionsFor(index: number, seed: Seed, rng: ReturnType<typeof createRng>): Edition[] {
+  const base = BigInt(seed.priceCents) * 10n ** 16n
+  const plan: Array<{ label: string; kind: EditionKind; supply: number; maxPerOrder: number; mult: bigint }> = [
+    { label: '1/1', kind: 'unique', supply: 1, maxPerOrder: 1, mult: 400n },
+    { label: '1/10', kind: 'limited', supply: 10, maxPerOrder: 5, mult: 160n },
+    { label: '1/50', kind: 'limited', supply: 50, maxPerOrder: 10, mult: 100n },
+    { label: 'ABERTA', kind: 'open', supply: 999, maxPerOrder: 20, mult: 110n },
+  ]
+  return plan.map((p, e) => {
+    // Variedade de estados: algumas edições esgotadas e alguns NFTs inteiros esgotados.
+    const wholeSoldOut = index % 13 === 11
+    const editionSoldOut = wholeSoldOut || (p.kind === 'unique' && index % 3 === 0) || (p.label === '1/10' && index % 5 === 4)
+    const available = editionSoldOut
+      ? 0
+      : p.kind === 'open'
+        ? 999
+        : p.kind === 'unique'
+          ? 1
+          : Math.max(1, Math.round(p.supply * (0.3 + rng.next() * 0.7)))
+    // A edição 1/50 usa o número do Figma (#0042); as demais derivam dele.
+    const tokenNumber = p.label === '1/50' ? seed.number : (seed.number + (e + 1) * 250) % 10_000
+    return {
+      id: `ed_${index}_${e}`,
+      label: p.label,
+      kind: p.kind,
+      tokenId: `#${String(tokenNumber).padStart(4, '0')}`,
+      priceEth: fromWei((base * p.mult) / 100n),
+      supply: p.supply,
+      available,
+      maxPerOrder: p.maxPerOrder,
+      status: available > 0 ? 'available' : 'sold_out',
+    }
+  })
+}
 
 export function buildCatalog(): Nft[] {
   const rng = createRng(2026)
-  const baseTime = Date.parse('2026-09-30T12:00:00Z')
-  const nfts: Nft[] = []
+  const baseTime = Date.parse('2026-10-15T12:00:00Z')
+  const seeds: Seed[] = [...FIGMA_ITEMS]
+  for (let i = seeds.length; i < 48; i++) {
+    const [stem, art] = MORE_STEMS[i % MORE_STEMS.length]!
+    seeds.push({
+      stem,
+      number: 100 + ((i * 37) % 800),
+      art,
+      priceCents: rng.int(4, 1230),
+      compareAtCents: i % 9 === 0 ? undefined : undefined,
+      attributes: [rng.pick(['Óculos', 'Fones', 'Chapéu', 'Blazer', 'Moletom']), rng.pick(['Sereno', 'Confiante', 'Curioso']), rng.pick(['Comum', 'Incomum', 'Raro', 'Épico'])],
+    })
+  }
 
-  for (let i = 0; i < 48; i++) {
-    const stem = STEMS[i % STEMS.length]!
-    const number = 100 + ((i * 37) % 300)
-    const name = `${stem} #${number}`
-    const slug = `${stem.toLowerCase().replace(/\s+/g, '-')}-${number}`
-    const category = CATEGORIES[(i * 5) % CATEGORIES.length]!
-    const rarity = RARITIES[rng.int(0, RARITIES.length - 1)]!
-
-    // Preço base entre 0.05 e 2.40 ETH, com centésimos — sempre string decimal.
-    const baseCents = rng.int(5, 240)
-    const editionCount = i % 7 === 0 ? 1 : rng.int(1, 3)
-    const editions: Edition[] = Array.from({ length: editionCount }, (_, e) => {
-      const supply = [1, 5, 10, 25][rng.int(0, 3)]!
-      // Alguns NFTs esgotados e algumas edições esgotadas para exercitar estados.
-      const soldOut = i % 11 === 5 || (e > 0 && rng.next() < 0.2)
-      const available = soldOut ? 0 : Math.max(1, Math.round(supply * (0.2 + rng.next() * 0.8)))
-      const priceWei = (BigInt(baseCents) * 10n ** 16n * BigInt(100 + e * 35)) / 100n
-      const tokenNumber = (i * 13 + e * 101) % 999
+  return seeds.map((seed, i) => {
+    const name = `${seed.stem} #${String(seed.number).padStart(3, '0')}`
+    const slug = `${seed.stem.toLowerCase().replace(/\s+/g, '-')}-${String(seed.number).padStart(3, '0')}`
+    const network = i === 0 ? 'ethereum' : NETWORK_CYCLE[i % NETWORK_CYCLE.length]!
+    const collection = i < 10 ? (i % 2 === 0 ? COLLECTIONS[0]! : COLLECTIONS[1]!) : COLLECTIONS[i % COLLECTIONS.length]!
+    const creator = i === 0 ? CREATORS[0]! : CREATORS[(i * 3) % CREATORS.length]!
+    const reviewCount = i === 0 ? 19 : rng.int(0, 42)
+    const reviews: Review[] = Array.from({ length: Math.min(reviewCount, 6) }, (_, r) => {
+      const t = REVIEW_TEMPLATES[(i + r) % REVIEW_TEMPLATES.length]!
       return {
-        id: `ed_${i}_${e}`,
-        label: EDITION_LABELS[e] ?? `Edição ${e + 1}`,
-        tokenId: `#${String(tokenNumber).padStart(4, '0')}`,
-        priceEth: fromWei(priceWei),
-        supply,
-        available,
-        maxPerOrder: Math.min(supply, 5),
-        status: available > 0 ? 'available' : 'sold_out',
+        id: `rv_${i}_${r}`,
+        author: REVIEWERS[(i + r) % REVIEWERS.length]!,
+        rating: t.rating,
+        comment: t.comment,
+        createdAt: new Date(baseTime - (r + 1) * 86_400_000 * 3).toISOString(),
       }
     })
+    const rating = reviews.length ? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10 : 0
+    const likes = i < 10 ? 900 - i * 37 : rng.int(3, 700)
+    const createdAt = new Date(baseTime - i * 30 * 60 * 60 * 1000).toISOString()
+    const images = [0, 1, 2, 3].map((v) => nftImage(seed.art, name, v))
+    const net = NETWORKS[network].label
 
-    const images = [0, 1, 2, 3].map((k) => nftImage(i + k * 3, name))
     const nft: Nft = {
       id: `nft_${String(i + 1).padStart(3, '0')}`,
       slug,
       name,
       image: images[0]!,
       images,
-      category,
-      rarity,
-      collection: COLLECTIONS[i % COLLECTIONS.length]!,
-      creator: CREATORS[(i * 3) % CREATORS.length]!,
+      category: CATEGORY_CYCLE[i % CATEGORY_CYCLE.length]!,
+      network,
+      collection,
+      creator,
       floorPriceEth: '0',
+      compareAtPriceEth: seed.compareAtCents ? fromWei(BigInt(seed.compareAtCents) * 10n ** 16n) : null,
       totalAvailable: 0,
       status: 'available',
-      likes: rng.int(3, 980),
-      createdAt: new Date(baseTime - i * 36 * 60 * 60 * 1000).toISOString(),
+      rare: seed.attributes.includes('Raro') || seed.attributes.includes('Épico'),
+      isNewRelease: i < 8,
+      isTrending: likes >= 600,
+      likes,
+      rating,
+      reviewCount,
+      createdAt,
       version: 1,
-      description: DESCRIPTION,
-      editions,
+      description: `Um colecionável digital finalizado à mão da coleção ${collection.name}, verificado na ${net}, com arte desbloqueável e acesso para colecionadores.`,
+      longDescription: [
+        `${name} é uma obra digital finalizada à mão da coleção ${collection.name}. Cada atributo fica armazenado nos metadados do token e verificado na ${net}. A obra explora identidade, movimento e luz em um mundo digital sem fronteiras.`,
+        `A propriedade inclui a arte em alta resolução, lançamentos exclusivos para colecionadores e um registro permanente de procedência registrada na rede. ${creator.name} recebe 5% de direitos autorais nas vendas secundárias, apoiando novos trabalhos e lançamentos da comunidade.`,
+      ],
+      editions: editionsFor(i, seed, rng),
+      attributes: seed.attributes,
       contractAddress: `0x${rng.hex(40)}`,
-      blockchain: NETWORKS[i % NETWORKS.length]!,
-      properties: Object.entries(TRAITS).map(([trait, values]) => ({ trait, value: rng.pick(values) })),
+      royaltyPercent: 5,
+      reviews,
     }
-    nfts.push(recomputeAggregates(nft))
-  }
-  return nfts
+    return recomputeAggregates(nft)
+  })
 }
 
-/** Recalcula preço mínimo, disponibilidade total e status a partir das edições. */
+/**
+ * Recalcula preço exibido, disponibilidade total e status a partir das
+ * edições. O preço exibido no card é o da edição padrão (1/50, como no
+ * Figma) quando disponível; senão, o menor entre as disponíveis.
+ */
 export function recomputeAggregates(nft: Nft): Nft {
-  const available = nft.editions.filter((e) => e.available > 0)
-  const pool = available.length > 0 ? available : nft.editions
-  const floor = pool.reduce((acc, e) => minEth(acc, e.priceEth), pool[0]!.priceEth)
-  const totalAvailable = nft.editions.reduce((acc, e) => acc + e.available, 0)
+  const editions = nft.editions.map((e) => ({ ...e, status: e.available > 0 ? ('available' as const) : ('sold_out' as const) }))
+  const available = editions.filter((e) => e.available > 0)
+  const preferred = available.find((e) => e.label === '1/50')
+  const pool = available.length > 0 ? available : editions
+  const floor = preferred?.priceEth ?? pool.reduce((acc, e) => minEth(acc, e.priceEth), pool[0]!.priceEth)
+  const totalAvailable = editions.reduce((acc, e) => acc + e.available, 0)
   return {
     ...nft,
-    editions: nft.editions.map((e) => ({ ...e, status: e.available > 0 ? 'available' : 'sold_out' })),
+    editions,
     floorPriceEth: fromWei(toWei(floor)),
     totalAvailable,
     status: totalAvailable > 0 ? 'available' : 'sold_out',

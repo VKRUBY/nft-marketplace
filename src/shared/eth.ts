@@ -63,6 +63,10 @@ export function minEth(a: EthString, b: EthString): EthString {
   return compareEth(a, b) <= 0 ? a : b
 }
 
+export function maxEth(a: EthString, b: EthString): EthString {
+  return compareEth(a, b) >= 0 ? a : b
+}
+
 /**
  * Formata para exibição sem passar por float. Arredonda half-up nas casas
  * pedidas e mantém no mínimo `minDecimals` casas ("0.39 ETH").

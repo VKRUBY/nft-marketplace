@@ -116,4 +116,29 @@ O socket.io-client abre um WebSocket (`transports: ['websocket']`) para `VITE_SO
 
 - **shadcn/ui sem CLI:** o registro `ui.shadcn.com` não estava acessível no ambiente de desenvolvimento usado. Os componentes foram escritos a partir do código-fonte canônico do shadcn/ui sobre as mesmas dependências (Radix, cva, tailwind-merge, lucide). `components.json` está no repositório, então `npx shadcn add` funciona em uma máquina com acesso.
 - **Playwright:** usa o Chrome estável (`channel: 'chrome'`) quando o Chromium do Playwright não pode ser baixado *(configuração na etapa 4)*.
-- *Desvios visuais em relação ao Figma: etapa 2.*
+
+### Decisões de UX e desvios do Figma
+
+Tokens (cores, Roboto Mono, raios, espaçamentos de 120px/96px) foram extraídos das variáveis do arquivo e de amostras dos frames exportados. Os assets de NFT são os exportados do Figma em 3x e convertidos para WebP em dois tamanhos (`srcset`).
+
+| Ponto do layout | Decisão |
+| --- | --- |
+| Marca | A interface usa **Kurio** (nome nos frames); "GreenMint" é só o nome da página do arquivo. |
+| Contagens da barra lateral (33, 12, 65…) | Vêm da API (`GET /nfts/facets`) e refletem o catálogo simulado de 48 itens. |
+| Miniaturas do detalhe | São vistas da mesma obra; a edição é escolhida pelos chips 1/1, 1/10, 1/50, ABERTA. |
+| ID do token divergente entre frames (#0009 × #0314) | O ID exibido é sempre o da edição retornada pela API. |
+| Rótulos "Rede / Contrato / Direitos autorais" trocados no detalhe | Cada rótulo mostra o conteúdo correspondente. |
+| Seletor ".eth" do Nome ENS | ENS só tem o sufixo `.eth`: ele fica fixo e só o nome é editável. |
+| Asteriscos em "Código de indicação" e "Nome ENS" | Opcionais: nem toda carteira tem ENS ou indicação, e exigir bloquearia a compra sem motivo. |
+| Formulário do pagamento no mobile (não desenhado) | Aparece recolhido abaixo da seleção de carteira, já pré-preenchido; erros de validação o abrem e focam o campo. |
+| "Usar outra carteira?" | Alterna para a carteira secundária cadastrada (ou leva ao cadastro dela). |
+| Botão "COMPRAR" | Adiciona a edição/quantidade ao carrinho e abre o carrinho; no mobile o ícone de carrinho adiciona sem sair. |
+| Pendente e recusado (não desenhados) | Seguem o modal da confirmação, com ícone, texto e ações próprios. |
+| Revisão antes do envio (não desenhada) | Diálogo no padrão dos modais (barra laranja), exigido pelo enunciado. |
+| Perfil com um botão "Salvar" | Dados e senha têm envios separados, para um erro de senha não descartar a edição do perfil. |
+| Carteiras | O formulário mostra a carteira cadastrada; acima dele há o estado da conexão simulada (conectar/desconectar). |
+| Coração nos cards | Só no mobile, como nos frames; no desktop o favorito fica no detalhe. |
+| Carrossel "Mais desta coleção" com pontos | Faixa com rolagem horizontal acessível por teclado e toque. |
+| Overlay do login | Escurecimento leve para manter o foco no modal sem esconder o Início ao fundo. |
+| Botão central da barra inferior mobile | Leva ao catálogo ("Explorar"); não há função de leitura de QR no escopo. |
+| Itens fora do escopo (Criadores, Aprenda, Diário, Ajuda, Atividade, Ofertas, Downloads, Suporte, newsletter, login social, recuperação de senha) | Levam a uma página "Em breve" ou mostram aviso explícito; nenhuma ação simula sucesso. |

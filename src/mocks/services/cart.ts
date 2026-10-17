@@ -64,6 +64,7 @@ export function toCartItem(line: CartLineRecord): CartItem | null {
   return {
     id: line.id,
     nftId: nft.id,
+    slug: nft.slug,
     editionId: edition.id,
     name: nft.name,
     editionLabel: edition.label,

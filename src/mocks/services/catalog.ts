@@ -1,31 +1,46 @@
-import type { Highlights, Nft, NftCategory, NftListParams, NftRarity, NftSort, NftSummary, Page } from '@/contracts/domain'
-import { compareEth, isEthString } from '@/shared/eth'
+import type {
+  CatalogFacets,
+  CatalogTab,
+  Highlights,
+  Network,
+  Nft,
+  NftCategory,
+  NftListParams,
+  NftSort,
+  NftSummary,
+  Page,
+} from '@/contracts/domain'
+import { CATEGORY_LIST, NETWORK_LIST } from '@/contracts/networks'
+import { compareEth, isEthString, maxEth, minEth } from '@/shared/eth'
 import { db, findNft, persist } from '../db'
 import { MockApiError } from '../errors'
 import { recomputeAggregates } from '../fixtures/catalog'
 import { publishNftUpdated } from '../realtime-hub'
 
-const CATEGORIES: NftCategory[] = ['art', 'collectible', 'music', 'photography', 'gaming', 'pfp']
-const RARITIES: NftRarity[] = ['common', 'rare', 'epic', 'legendary']
 const SORTS: NftSort[] = ['recent', 'price_asc', 'price_desc', 'popular']
+const TABS: CatalogTab[] = ['all', 'new', 'trending']
 export const MAX_PAGE_SIZE = 48
 
 export function toSummary(nft: Nft): NftSummary {
   const {
     description: _d,
+    longDescription: _l,
     images: _i,
     editions: _e,
-    contractAddress: _c,
-    blockchain: _b,
-    properties: _p,
+    creator: _c,
+    attributes: _a,
+    contractAddress: _ca,
+    royaltyPercent: _r,
+    reviews: _rv,
     ...summary
   } = nft
   return summary
 }
 
+export type ParsedListParams = Required<Pick<NftListParams, 'page' | 'pageSize' | 'sort' | 'tab'>> & NftListParams
+
 /** Converte a query string em parâmetros validados; valores inválidos geram 400. */
-export function parseListParams(search: URLSearchParams): Required<Pick<NftListParams, 'page' | 'pageSize' | 'sort'>> &
-  NftListParams {
+export function parseListParams(search: URLSearchParams): ParsedListParams {
   const fieldErrors: Record<string, string> = {}
   const list = (key: string) =>
     search
@@ -34,15 +49,20 @@ export function parseListParams(search: URLSearchParams): Required<Pick<NftListP
       .filter(Boolean)
 
   const category = list('category') as NftCategory[]
-  if (category.some((c) => !CATEGORIES.includes(c))) fieldErrors.category = 'Categoria desconhecida.'
-  const rarity = list('rarity') as NftRarity[]
-  if (rarity.some((r) => !RARITIES.includes(r))) fieldErrors.rarity = 'Raridade desconhecida.'
+  if (category.some((c) => !CATEGORY_LIST.includes(c))) fieldErrors.category = 'Coleção desconhecida.'
+  const network = list('network') as Network[]
+  if (network.some((n) => !NETWORK_LIST.includes(n))) fieldErrors.network = 'Rede desconhecida.'
+  const tab = (search.get('tab') ?? 'all') as CatalogTab
+  if (!TABS.includes(tab)) fieldErrors.tab = 'Aba inválida.'
   const status = search.get('status') ?? undefined
   if (status && status !== 'available' && status !== 'sold_out') fieldErrors.status = 'Status inválido.'
   const minPrice = search.get('minPrice') ?? undefined
   const maxPrice = search.get('maxPrice') ?? undefined
   if (minPrice && !isEthString(minPrice)) fieldErrors.minPrice = 'Preço mínimo inválido.'
   if (maxPrice && !isEthString(maxPrice)) fieldErrors.maxPrice = 'Preço máximo inválido.'
+  if (minPrice && maxPrice && isEthString(minPrice) && isEthString(maxPrice) && compareEth(minPrice, maxPrice) > 0) {
+    fieldErrors.minPrice = 'O preço mínimo é maior que o máximo.'
+  }
   const sort = (search.get('sort') ?? 'recent') as NftSort
   if (!SORTS.includes(sort)) fieldErrors.sort = 'Ordenação inválida.'
   const page = Number(search.get('page') ?? 1)
@@ -55,14 +75,17 @@ export function parseListParams(search: URLSearchParams): Required<Pick<NftListP
   }
   return {
     q: search.get('q')?.trim() || undefined,
+    tab,
     category: category.length ? category : undefined,
-    rarity: rarity.length ? rarity : undefined,
+    network: network.length ? network : undefined,
     status: status as NftListParams['status'],
     minPrice,
     maxPrice,
     sort,
     page,
     pageSize,
+    exclude: search.get('exclude') || undefined,
+    collection: search.get('collection') || undefined,
   }
 }
 
@@ -73,18 +96,22 @@ function normalize(text: string): string {
     .toLowerCase()
 }
 
-export function listNfts(params: ReturnType<typeof parseListParams>): Page<NftSummary> {
+export function listNfts(params: ParsedListParams): Page<NftSummary> {
   const q = params.q ? normalize(params.q) : null
   let items = db.nfts.filter((nft) => {
     if (q) {
       const haystack = normalize(`${nft.name} ${nft.collection.name} ${nft.creator.name} ${nft.creator.handle}`)
       if (!haystack.includes(q)) return false
     }
+    if (params.tab === 'new' && !nft.isNewRelease) return false
+    if (params.tab === 'trending' && !nft.isTrending) return false
     if (params.category && !params.category.includes(nft.category)) return false
-    if (params.rarity && !params.rarity.includes(nft.rarity)) return false
+    if (params.network && !params.network.includes(nft.network)) return false
     if (params.status && nft.status !== params.status) return false
     if (params.minPrice && compareEth(nft.floorPriceEth, params.minPrice) < 0) return false
     if (params.maxPrice && compareEth(nft.floorPriceEth, params.maxPrice) > 0) return false
+    if (params.exclude && (nft.id === params.exclude || nft.slug === params.exclude)) return false
+    if (params.collection && nft.collection.id !== params.collection) return false
     return true
   })
 
@@ -114,12 +141,27 @@ export function listNfts(params: ReturnType<typeof parseListParams>): Page<NftSu
   }
 }
 
+/** Contagens reais do catálogo para a barra lateral e limites do filtro de preço. */
+export function getFacets(): CatalogFacets {
+  const prices = db.nfts.map((n) => n.floorPriceEth)
+  return {
+    categories: CATEGORY_LIST.map((id) => ({ id, count: db.nfts.filter((n) => n.category === id).length })),
+    networks: NETWORK_LIST.map((id) => ({ id, count: db.nfts.filter((n) => n.network === id).length })),
+    priceRange: {
+      min: prices.length ? prices.reduce((a, b) => minEth(a, b)) : '0',
+      max: prices.length ? prices.reduce((a, b) => maxEth(a, b)) : '0',
+    },
+  }
+}
+
 export function getHighlights(): Highlights {
   const available = db.nfts.filter((n) => n.status === 'available')
   const popular = [...available].sort((a, b) => b.likes - a.likes || a.id.localeCompare(b.id))
+  const featured = available.find((n) => n.compareAtPriceEth && n.rare) ?? popular[0] ?? null
   return {
     hero: popular.slice(0, 3).map(toSummary),
-    trending: popular.slice(3, 11).map(toSummary),
+    featured: featured ? toSummary(featured) : null,
+    trending: popular.slice(3, 13).map(toSummary),
   }
 }
 

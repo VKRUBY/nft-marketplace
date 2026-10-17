@@ -82,7 +82,7 @@ export interface DbState {
   flags: Record<string, boolean>
 }
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 const STORAGE_KEY = 'greenmint:mock-db'
 
 function seed(scenarioId: string): DbState {

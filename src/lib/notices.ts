@@ -1,66 +1,26 @@
-import { useSyncExternalStore } from 'react'
+import { toast } from 'sonner'
 
 /**
- * Fila de avisos para o usuário (toasts + região aria-live). Usada para
- * resultados de mutations e para mudanças recebidas em tempo real.
+ * Avisos ao usuário (toasts do sonner, anunciados por leitores de tela via
+ * região aria-live). Usado para resultados de mutations e para mudanças
+ * recebidas em tempo real. `dedupeKey` substitui o aviso anterior com a
+ * mesma chave em vez de empilhar.
  */
-export type NoticeTone = 'info' | 'success' | 'warning' | 'error'
+type Notify = (title: string, description?: string, dedupeKey?: string) => string | number
 
-export interface Notice {
-  id: string
-  tone: NoticeTone
-  title: string
-  description?: string
-  /** Avisos com a mesma chave substituem o anterior em vez de empilhar. */
-  dedupeKey?: string
-  createdAt: number
-}
-
-type Listener = () => void
-let notices: Notice[] = []
-const listeners = new Set<Listener>()
-
-function emit() {
-  for (const l of listeners) l()
-}
-
-export const noticeStore = {
-  push(notice: Omit<Notice, 'id' | 'createdAt'>): string {
-    const id = crypto.randomUUID()
-    const next: Notice = { ...notice, id, createdAt: Date.now() }
-    notices = [
-      ...notices.filter((n) => !notice.dedupeKey || n.dedupeKey !== notice.dedupeKey),
-      next,
-    ].slice(-5)
-    emit()
-    return id
-  },
-  dismiss(id: string) {
-    notices = notices.filter((n) => n.id !== id)
-    emit()
-  },
-  clear() {
-    notices = []
-    emit()
-  },
-  subscribe(listener: Listener) {
-    listeners.add(listener)
-    return () => listeners.delete(listener)
-  },
-  get: () => notices,
-}
-
-export function useNotices(): Notice[] {
-  return useSyncExternalStore(noticeStore.subscribe, noticeStore.get, noticeStore.get)
-}
+const make =
+  (kind: 'success' | 'info' | 'warning' | 'error'): Notify =>
+  (title, description, dedupeKey) =>
+    toast[kind](title, {
+      description,
+      id: dedupeKey,
+      duration: kind === 'error' || kind === 'warning' ? 7000 : 4000,
+    })
 
 export const notify = {
-  success: (title: string, description?: string, dedupeKey?: string) =>
-    noticeStore.push({ tone: 'success', title, description, dedupeKey }),
-  info: (title: string, description?: string, dedupeKey?: string) =>
-    noticeStore.push({ tone: 'info', title, description, dedupeKey }),
-  warning: (title: string, description?: string, dedupeKey?: string) =>
-    noticeStore.push({ tone: 'warning', title, description, dedupeKey }),
-  error: (title: string, description?: string, dedupeKey?: string) =>
-    noticeStore.push({ tone: 'error', title, description, dedupeKey }),
+  success: make('success'),
+  info: make('info'),
+  warning: make('warning'),
+  error: make('error'),
+  dismiss: (id?: string | number) => toast.dismiss(id),
 }

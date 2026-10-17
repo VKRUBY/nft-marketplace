@@ -222,7 +222,7 @@ export function createOrder(userId: string, idempotencyKey: string, input: Creat
     networkFeeEth: accepted.networkFeeEth,
     totalEth: accepted.totalEth,
     network: input.network,
-    wallet: { id: wallet.id, label: wallet.label, address: wallet.address, provider: wallet.provider },
+    wallet: { id: wallet.id, nickname: wallet.nickname, address: wallet.address, provider: wallet.provider },
     buyer: { ...input.buyer },
     txHash: null,
     explorerUrl: null,

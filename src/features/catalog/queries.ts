@@ -25,7 +25,11 @@ export const highlightsQuery = () =>
     queryKey: queryKeys.nfts.highlights(),
     queryFn: async ({ signal }) => {
       const h = await nftApi.highlights({ signal })
-      return { hero: h.hero.map(reconcileNft), trending: h.trending.map(reconcileNft) }
+      return {
+        hero: h.hero.map(reconcileNft),
+        featured: h.featured ? reconcileNft(h.featured) : null,
+        trending: h.trending.map(reconcileNft),
+      }
     },
     staleTime: 60_000,
   })
@@ -34,4 +38,11 @@ export const nftDetailQuery = (idOrSlug: string) =>
   queryOptions({
     queryKey: queryKeys.nfts.detail(idOrSlug),
     queryFn: async ({ signal }) => reconcileNft(await nftApi.detail(idOrSlug, { signal })),
+  })
+
+export const facetsQuery = () =>
+  queryOptions({
+    queryKey: queryKeys.nfts.facets(),
+    queryFn: ({ signal }) => nftApi.facets({ signal }),
+    staleTime: 5 * 60_000,
   })

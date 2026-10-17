@@ -1,8 +1,8 @@
-# GreenMint — NFT Marketplace
+# Kurio — NFT Marketplace
 
 Marketplace de NFTs em React + TypeScript com descoberta, compra e conta do colecionador. Toda a API (REST e Socket.IO) é simulada no navegador com MSW, então o projeto roda a partir de um checkout limpo, sem backend.
 
-> Status: **etapa 1 de 4** — contratos, mocks, tempo real e integração de dados prontos; telas finais (Figma) nas etapas 2 e 3; testes Playwright, Lighthouse e documentação final na etapa 4.
+> Status: **etapa 2 de 4** — contratos, mocks, tempo real e todas as telas do Figma (desktop e mobile) implementadas; testes Playwright, Lighthouse e documentação final nas próximas etapas.
 
 ## Stack
 
@@ -45,10 +45,10 @@ Copie `.env.example` para `.env.local` se quiser mudar algo — todas têm padr�
 
 | Usuário | E-mail | Senha |
 | --- | --- | --- |
-| Ana Ribeiro (2 carteiras, favoritos) | `ana@greenmint.test` | `Mint@2026` |
-| Bruno Costa (1 carteira) | `bruno@greenmint.test` | `Mint@2026` |
+| Ana Ribeiro (2 carteiras, favoritos) | `ana@kurio.test` | `Mint@2026` |
+| Bruno Costa (1 carteira) | `bruno@kurio.test` | `Mint@2026` |
 
-Cupons: `GREEN10` (10%), `MINT25` (25%), `EXPIRADO` (vencido). Qualquer outro código é inválido.
+Cupons: `KURIO10` (10%), `LANCAMENTO25` (25%), `EXPIRADO` (vencido). Qualquer outro código é inválido.
 
 ## Cenários dos mocks
 

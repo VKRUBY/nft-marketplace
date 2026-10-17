@@ -35,6 +35,7 @@ export function installRealtimeSync(queryClient: QueryClient, getUserId: () => s
     queryClient.setQueryData<Highlights>(queryKeys.nfts.highlights(), (h) =>
       h
         ? {
+            featured: h.featured?.id === data.nftId ? patchNftSummary(h.featured, data, version) : h.featured,
             hero: h.hero.map((n) => (n.id === data.nftId ? patchNftSummary(n, data, version) : n)),
             trending: h.trending.map((n) => (n.id === data.nftId ? patchNftSummary(n, data, version) : n)),
           }

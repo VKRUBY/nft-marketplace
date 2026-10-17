@@ -23,8 +23,19 @@ const eth = z
 
 export const catalogSearchSchema = z.object({
   q: z.string().trim().max(80).optional().catch(undefined),
-  category: listOf(['art', 'collectible', 'music', 'photography', 'gaming', 'pfp'] as const),
-  rarity: listOf(['common', 'rare', 'epic', 'legendary'] as const),
+  tab: z.enum(['all', 'new', 'trending']).optional().catch(undefined),
+  category: listOf([
+    'digital_art',
+    'photography',
+    'music',
+    'art_3d',
+    'collectible',
+    'generative',
+    'gaming',
+    'subscription',
+    'utility',
+  ] as const),
+  network: listOf(['ethereum', 'polygon', 'solana'] as const),
   status: z.enum(['available', 'sold_out']).optional().catch(undefined),
   minPrice: eth,
   maxPrice: eth,
@@ -39,8 +50,9 @@ export const CATALOG_PAGE_SIZE = 12
 export function toListParams(search: CatalogSearch): NftListParams {
   return {
     q: search.q || undefined,
+    tab: search.tab ?? 'all',
     category: search.category?.length ? search.category : undefined,
-    rarity: search.rarity?.length ? search.rarity : undefined,
+    network: search.network?.length ? search.network : undefined,
     status: search.status,
     minPrice: search.minPrice,
     maxPrice: search.maxPrice,

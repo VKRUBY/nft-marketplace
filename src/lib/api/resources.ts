@@ -3,6 +3,7 @@ import type {
   AuthResponse,
   AvatarUpdateInput,
   Cart,
+  CatalogFacets,
   CreateOrderInput,
   Favorites,
   Highlights,
@@ -59,6 +60,7 @@ export const nftApi = {
       signal,
     }),
   highlights: ({ signal }: Signal = {}) => request<Highlights>({ url: API.nfts.highlights, signal }),
+  facets: ({ signal }: Signal = {}) => request<CatalogFacets>({ url: API.nfts.facets, signal }),
   detail: (idOrSlug: string, { signal }: Signal = {}) => request<Nft>({ url: API.nfts.detail(idOrSlug), signal }),
 }
 

@@ -1,10 +1,32 @@
-import type { Network } from './domain'
+import type { NftCategory, Network, WalletProvider } from './domain'
 
-export const NETWORKS: Record<Network, { label: string; chainId: number; explorer: string }> = {
-  ethereum: { label: 'Ethereum', chainId: 1, explorer: 'https://etherscan.io' },
-  polygon: { label: 'Polygon', chainId: 137, explorer: 'https://polygonscan.com' },
-  arbitrum: { label: 'Arbitrum One', chainId: 42161, explorer: 'https://arbiscan.io' },
-  base: { label: 'Base', chainId: 8453, explorer: 'https://basescan.org' },
+export const NETWORKS: Record<Network, { label: string; explorer: string; explorerName: string }> = {
+  ethereum: { label: 'Ethereum', explorer: 'https://etherscan.io', explorerName: 'Etherscan' },
+  polygon: { label: 'Polygon', explorer: 'https://polygonscan.com', explorerName: 'Polygonscan' },
+  solana: { label: 'Solana', explorer: 'https://solscan.io', explorerName: 'Solscan' },
 }
 
 export const NETWORK_LIST = Object.keys(NETWORKS) as Network[]
+
+/** Ordem e rótulos da barra lateral "Coleções". */
+export const CATEGORIES: Record<NftCategory, string> = {
+  digital_art: 'Arte digital',
+  photography: 'Fotografia',
+  music: 'Música',
+  art_3d: 'Arte 3D',
+  collectible: 'Colecionáveis',
+  generative: 'Generativa',
+  gaming: 'Jogos',
+  subscription: 'Assinaturas',
+  utility: 'Utilidade',
+}
+
+export const CATEGORY_LIST = Object.keys(CATEGORIES) as NftCategory[]
+
+export const WALLET_PROVIDERS: Record<WalletProvider, string> = {
+  metamask: 'MetaMask',
+  walletconnect: 'WalletConnect',
+  coinbase: 'Coinbase Wallet',
+}
+
+export const WALLET_PROVIDER_LIST = Object.keys(WALLET_PROVIDERS) as WalletProvider[]

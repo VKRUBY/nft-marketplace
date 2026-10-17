@@ -52,15 +52,12 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
   const salt = crypto.randomUUID()
   const user: UserRecord = {
     id: `usr_${crypto.randomUUID().slice(0, 8)}`,
-    name: input.name,
+    name: input.username,
     username: input.username,
     email: input.email,
-    phone: null,
-    bio: null,
+    ensName: null,
+    walletNickname: null,
     avatarUrl: null,
-    country: null,
-    city: null,
-    website: null,
     createdAt: now,
     updatedAt: now,
     passwordSalt: salt,

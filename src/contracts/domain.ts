@@ -5,17 +5,19 @@ export type IsoDate = string
 
 // ─── Conta e sessão ──────────────────────────────────────────────────────────
 
+/** Perfil do colecionador (campos do frame "Perfil do Colecionador"). */
 export interface User {
   id: string
+  /** "Nome de exibição". */
   name: string
+  /** "Nome de usuário". */
   username: string
   email: string
-  phone: string | null
-  bio: string | null
+  /** "Nome ENS" sem o sufixo, ex.: "ana" → ana.eth. */
+  ensName: string | null
+  /** "Apelido da carteira". */
+  walletNickname: string | null
   avatarUrl: string | null
-  country: string | null
-  city: string | null
-  website: string | null
   createdAt: IsoDate
   updatedAt: IsoDate
 }
@@ -36,46 +38,63 @@ export interface LoginInput {
   password: string
 }
 
+/** Frame "Cadastro": nome de usuário, e-mail, senha e confirmação. */
 export interface RegisterInput {
-  name: string
   username: string
   email: string
   password: string
-  acceptTerms: true
+  confirmPassword: string
 }
 
-export type ProfileUpdateInput = Partial<
-  Pick<User, 'name' | 'username' | 'email' | 'phone' | 'bio' | 'country' | 'city' | 'website'>
->
+export type ProfileUpdateInput = Partial<Pick<User, 'name' | 'username' | 'email' | 'ensName' | 'walletNickname'>>
 
 export interface AvatarUpdateInput {
-  /** data URL (image/png | image/jpeg | image/webp), até 2 MB. */
-  dataUrl: string
+  /** data URL (image/png | image/jpeg | image/webp) ou `null` para remover. */
+  dataUrl: string | null
 }
 
 export interface PasswordChangeInput {
   currentPassword: string
   newPassword: string
+  confirmPassword: string
 }
 
 // ─── Catálogo ────────────────────────────────────────────────────────────────
 
-export type NftCategory = 'art' | 'collectible' | 'music' | 'photography' | 'gaming' | 'pfp'
-export type NftRarity = 'common' | 'rare' | 'epic' | 'legendary'
+/** Coleções da barra lateral do Início. */
+export type NftCategory =
+  | 'digital_art'
+  | 'photography'
+  | 'music'
+  | 'art_3d'
+  | 'collectible'
+  | 'generative'
+  | 'gaming'
+  | 'subscription'
+  | 'utility'
+
 export type AvailabilityStatus = 'available' | 'sold_out'
+
+/** Abas do catálogo: Todos os NFTs, Novos lançamentos, Em alta. */
+export type CatalogTab = 'all' | 'new' | 'trending'
 
 export interface NftImage {
   url: string
+  /** Variações responsivas no formato do atributo `srcset`. */
+  srcSet: string
   alt: string
   width: number
   height: number
 }
 
+export type EditionKind = 'unique' | 'limited' | 'open'
+
 export interface Edition {
   id: string
-  /** Rótulo exibido ao colecionador, ex.: "Edição Gênesis". */
+  /** Rótulo do seletor de edição: "1/1", "1/10", "1/50", "ABERTA". */
   label: string
-  /** Identificador do token na simulação, ex.: "#0314". */
+  kind: EditionKind
+  /** "ID do token", ex.: "#0042". */
   tokenId: string
   priceEth: EthString
   supply: number
@@ -88,14 +107,11 @@ export interface Creator {
   id: string
   name: string
   handle: string
-  avatarUrl: string
-  verified: boolean
 }
 
 export interface Collection {
   id: string
   name: string
-  verified: boolean
 }
 
 export interface NftSummary {
@@ -104,40 +120,62 @@ export interface NftSummary {
   name: string
   image: NftImage
   category: NftCategory
-  rarity: NftRarity
+  network: Network
   collection: Collection
-  creator: Creator
   /** Menor preço entre as edições disponíveis (ou entre todas, se esgotado). */
   floorPriceEth: EthString
+  /** Preço anterior exibido riscado ao lado do atual, quando há promoção. */
+  compareAtPriceEth: EthString | null
   totalAvailable: number
   status: AvailabilityStatus
+  /** Exibe o selo "RARO". */
+  rare: boolean
+  isNewRelease: boolean
+  isTrending: boolean
   likes: number
+  rating: number
+  reviewCount: number
   createdAt: IsoDate
   /** Versão monotônica do recurso; usada para ignorar eventos antigos. */
   version: number
 }
 
+export interface Review {
+  id: string
+  author: string
+  rating: number
+  comment: string
+  createdAt: IsoDate
+}
+
 export interface Nft extends NftSummary {
   description: string
+  longDescription: string[]
   images: NftImage[]
   editions: Edition[]
+  creator: Creator
+  attributes: string[]
   contractAddress: string
-  blockchain: Network
-  properties: Array<{ trait: string; value: string }>
+  royaltyPercent: number
+  reviews: Review[]
 }
 
 export type NftSort = 'recent' | 'price_asc' | 'price_desc' | 'popular'
 
 export interface NftListParams {
   q?: string
+  tab?: CatalogTab
   category?: NftCategory[]
-  rarity?: NftRarity[]
+  network?: Network[]
   status?: AvailabilityStatus
   minPrice?: EthString
   maxPrice?: EthString
   sort?: NftSort
   page?: number
   pageSize?: number
+  /** Exclui um NFT (usado em "Mais desta coleção"). */
+  exclude?: string
+  collection?: string
 }
 
 export interface Page<T> {
@@ -148,8 +186,19 @@ export interface Page<T> {
   totalPages: number
 }
 
+/** Contagens da barra lateral e limites do filtro de preço. */
+export interface CatalogFacets {
+  categories: Array<{ id: NftCategory; count: number }>
+  networks: Array<{ id: Network; count: number }>
+  priceRange: { min: EthString; max: EthString }
+}
+
 export interface Highlights {
+  /** Slides do carrossel do topo. */
   hero: NftSummary[]
+  /** "NFT em destaque — oferta limitada". */
+  featured: NftSummary | null
+  /** "Colecionadores também viram". */
   trending: NftSummary[]
 }
 
@@ -166,6 +215,7 @@ export type CartItemIssue = 'PRICE_CHANGED' | 'QUANTITY_REDUCED' | 'SOLD_OUT'
 export interface CartItem {
   id: string
   nftId: string
+  slug: string
   editionId: string
   name: string
   editionLabel: string
@@ -217,29 +267,41 @@ export interface AddCartItemInput {
 
 // ─── Carteiras e redes ───────────────────────────────────────────────────────
 
-export type Network = 'ethereum' | 'polygon' | 'arbitrum' | 'base'
-export type WalletProvider = 'metamask' | 'walletconnect' | 'coinbase' | 'rainbow'
+export type Network = 'ethereum' | 'polygon' | 'solana'
+export type WalletProvider = 'metamask' | 'walletconnect' | 'coinbase'
 export type WalletRole = 'primary' | 'secondary'
 
-export interface Wallet {
+/** Campos do frame "Carteiras" (repetidos no "Perfil do colecionador" do Pagamento). */
+export interface WalletDetails {
+  /** "Nome de exibição". */
+  displayName: string
+  /** "Apelido da carteira" — ex.: "Principal", "Reserva". */
+  nickname: string
+  network: Network
+  /** "Nome do perfil". */
+  profileName: string
+  /** "Endereço da carteira" (0x…). */
+  address: string
+  /** "ENS ou carteira secundária (opcional)". */
+  secondaryAddress: string | null
+  /** "Tipo de carteira". */
+  provider: WalletProvider
+  /** "Código de indicação" (opcional; ver ARCHITECTURE.md). */
+  referralCode: string | null
+  email: string
+  /** "Nome ENS" sem o sufixo .eth (opcional; ver ARCHITECTURE.md). */
+  ensName: string | null
+}
+
+export interface Wallet extends WalletDetails {
   id: string
   role: WalletRole
-  label: string
-  provider: WalletProvider
-  address: string
-  ens: string | null
-  networks: Network[]
   createdAt: IsoDate
   updatedAt: IsoDate
 }
 
-export interface WalletInput {
+export interface WalletInput extends WalletDetails {
   role: WalletRole
-  label: string
-  provider: WalletProvider
-  address: string
-  ens?: string | null
-  networks: Network[]
 }
 
 export type WalletConnectionStatus = 'connected' | 'disconnected'
@@ -304,12 +366,12 @@ export interface QuoteInput {
   network: Network
 }
 
-export interface BuyerInfo {
-  name: string
-  email: string
-  phone: string
-  country: string
-  city: string
+/** Dados do "Perfil do colecionador" enviados com o pedido. */
+export interface BuyerInfo extends Omit<WalletDetails, 'nickname'> {
+  /** "Nome de usuário". */
+  username: string
+  /** "Observação do colecionador (opcional)". */
+  note: string | null
 }
 
 export interface CreateOrderInput {
@@ -332,7 +394,7 @@ export interface Order {
   networkFeeEth: EthString
   totalEth: EthString
   network: Network
-  wallet: Pick<Wallet, 'id' | 'label' | 'address' | 'provider'>
+  wallet: Pick<Wallet, 'id' | 'nickname' | 'address' | 'provider'>
   buyer: BuyerInfo
   txHash: string | null
   explorerUrl: string | null

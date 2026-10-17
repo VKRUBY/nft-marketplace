@@ -16,6 +16,7 @@ export const queryKeys = {
     lists: () => ['nfts', 'list'] as const,
     list: (params: NftListParams) => ['nfts', 'list', normalizeListParams(params)] as const,
     highlights: () => ['nfts', 'highlights'] as const,
+    facets: () => ['nfts', 'facets'] as const,
     detail: (idOrSlug: string) => ['nfts', 'detail', idOrSlug] as const,
   },
   cart: {
@@ -39,8 +40,11 @@ export const queryKeys = {
 export function normalizeListParams(params: NftListParams): NftListParams {
   const out: NftListParams = {}
   if (params.q?.trim()) out.q = params.q.trim()
+  out.tab = params.tab ?? 'all'
   if (params.category?.length) out.category = [...params.category].sort()
-  if (params.rarity?.length) out.rarity = [...params.rarity].sort()
+  if (params.network?.length) out.network = [...params.network].sort()
+  if (params.exclude) out.exclude = params.exclude
+  if (params.collection) out.collection = params.collection
   if (params.status) out.status = params.status
   if (params.minPrice) out.minPrice = params.minPrice
   if (params.maxPrice) out.maxPrice = params.maxPrice

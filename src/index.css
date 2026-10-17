@@ -1,33 +1,66 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '@fontsource/roboto-mono/latin-400.css';
+@import '@fontsource/roboto-mono/latin-500.css';
+@import '@fontsource/roboto-mono/latin-700.css';
+
+@custom-variant dark (&:is(.dark *));
 
 /*
- * Tokens provisórios a partir do Figma (color/ink #140D0A, destaque laranja).
- * Serão refinados na etapa de fidelidade visual com os valores exatos das variáveis.
+ * Tokens extraídos do Figma (variáveis color/ink e color/foreground e amostras
+ * dos frames exportados). Tipografia: Roboto Mono (variável font/family).
  */
 :root {
-  --radius: 0.5rem;
-  --background: #140d0a;
-  --foreground: #f5ecdf;
-  --card: #241914;
-  --card-foreground: #f5ecdf;
-  --popover: #241914;
-  --popover-foreground: #f5ecdf;
-  --primary: #d98b3a;
-  --primary-foreground: #140d0a;
-  --secondary: #2e211a;
-  --secondary-foreground: #f5ecdf;
-  --muted: #2e211a;
-  --muted-foreground: #c4b3a0;
-  --accent: #3a2a20;
-  --accent-foreground: #f5ecdf;
-  --destructive: #e5484d;
-  --border: #3a2a20;
-  --input: #3a2a20;
-  --ring: #f0a85a;
+  --radius: 0.375rem;
+
+  --ink: #140d0a; /* color/ink — fundo */
+  --surface: #241612; /* cards, sidebar, modais */
+  --band: #38220f; /* faixa de contato do rodapé, chips */
+  --line: #432c1a; /* divisórias */
+  --field: #3f2319; /* borda de inputs */
+  --accent: #d28a4c; /* botões e destaques */
+  --accent-strong: #e89b55; /* preços e links sobre fundo escuro */
+  --cream: #f5f1eb; /* color/foreground */
+  --sand: #cfb28c; /* texto de apoio */
+  --dust: #b39463; /* placeholders e metadados */
+  --required: #f0805f; /* asterisco de obrigatório */
+  --danger: #ff8a7a;
+  --success: #8fd19e;
+
+  --background: var(--ink);
+  --foreground: var(--cream);
+  --card: var(--surface);
+  --card-foreground: var(--cream);
+  --popover: var(--surface);
+  --popover-foreground: var(--cream);
+  --primary: var(--accent);
+  --primary-foreground: var(--ink);
+  --secondary: var(--band);
+  --secondary-foreground: var(--cream);
+  --muted: var(--surface);
+  --muted-foreground: var(--sand);
+  --accent-bg: var(--band);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--field);
+  --ring: var(--accent-strong);
 }
 
 @theme inline {
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-band: var(--band);
+  --color-line: var(--line);
+  --color-field: var(--field);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-dust: var(--dust);
+  --color-required: var(--required);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -40,17 +73,31 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-mono: ui-monospace, 'Roboto Mono', SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-mono);
+
+  --breakpoint-xs: 26rem;
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
 }
 
 @layer base {
@@ -59,9 +106,40 @@
   }
   html {
     color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground font-mono antialiased;
+    @apply bg-ink text-cream font-mono antialiased;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--dust);
+    opacity: 1;
+  }
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 xl:px-0;
+  }
+  /* Skeleton com shimmer; sem movimento quando o usuário pede menos animação. */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 0%, #33221a 40%, var(--surface) 80%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
   }
 }
 
@@ -73,5 +151,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .skeleton {
+    animation: none;
+    background: var(--surface);
   }
 }

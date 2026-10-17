@@ -43,6 +43,7 @@ export function updateProfile(userId: string, input: ProfileUpdateInput): User {
 }
 
 export function updateAvatar(userId: string, input: AvatarUpdateInput): User {
+  // dataUrl null remove o avatar.
   const user = requireUser(userId)
   user.avatarUrl = input.dataUrl
   user.updatedAt = new Date().toISOString()
@@ -91,6 +92,22 @@ export function listWallets(userId: string): Wallet[] {
   return [...(db.wallets[userId] ?? [])].sort((a, b) => order[a.role] - order[b.role])
 }
 
+function toWallet(input: WalletInput): Omit<Wallet, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    role: input.role,
+    displayName: input.displayName,
+    nickname: input.nickname,
+    network: input.network,
+    profileName: input.profileName,
+    address: input.address,
+    secondaryAddress: input.secondaryAddress ?? null,
+    provider: input.provider,
+    referralCode: input.referralCode ?? null,
+    email: input.email,
+    ensName: input.ensName ?? null,
+  }
+}
+
 function assertUniqueness(userId: string, input: WalletInput, ignoreId?: string) {
   const wallets = db.wallets[userId] ?? []
   if (wallets.some((w) => w.id !== ignoreId && w.role === input.role)) {
@@ -110,17 +127,7 @@ function assertUniqueness(userId: string, input: WalletInput, ignoreId?: string)
 export function createWallet(userId: string, input: WalletInput): Wallet {
   assertUniqueness(userId, input)
   const now = new Date().toISOString()
-  const wallet: Wallet = {
-    id: newId('wal'),
-    role: input.role,
-    label: input.label,
-    provider: input.provider,
-    address: input.address,
-    ens: input.ens ?? null,
-    networks: input.networks,
-    createdAt: now,
-    updatedAt: now,
-  }
+  const wallet: Wallet = { id: newId('wal'), ...toWallet(input), createdAt: now, updatedAt: now }
   db.wallets[userId] = [...(db.wallets[userId] ?? []), wallet]
   persist()
   return wallet
@@ -131,16 +138,8 @@ export function updateWallet(userId: string, walletId: string, input: WalletInpu
   const wallet = wallets.find((w) => w.id === walletId)
   if (!wallet) throw new MockApiError('NOT_FOUND', 'Carteira não encontrada.')
   assertUniqueness(userId, input, walletId)
-  Object.assign(wallet, {
-    role: input.role,
-    label: input.label,
-    provider: input.provider,
-    address: input.address,
-    ens: input.ens ?? null,
-    networks: input.networks,
-    updatedAt: new Date().toISOString(),
-  })
-  // Endereço ou redes mudaram: a conexão anterior deixa de valer.
+  Object.assign(wallet, toWallet(input), { updatedAt: new Date().toISOString() })
+  // Endereço ou rede podem ter mudado: a conexão anterior deixa de valer.
   delete db.walletConnections[walletId]
   persist()
   return wallet
@@ -149,9 +148,9 @@ export function updateWallet(userId: string, walletId: string, input: WalletInpu
 export function connectWallet(userId: string, walletId: string, network: Network): WalletConnection {
   const wallet = db.wallets[userId]?.find((w) => w.id === walletId)
   if (!wallet) throw new MockApiError('NOT_FOUND', 'Carteira não encontrada.')
-  if (!wallet.networks.includes(network)) {
-    throw new MockApiError('WALLET_REJECTED', 'Esta carteira não está habilitada para a rede escolhida.', {
-      network: 'Rede não suportada por esta carteira.',
+  if (wallet.network !== network) {
+    throw new MockApiError('WALLET_REJECTED', 'Esta carteira está cadastrada em outra rede.', {
+      network: 'A rede escolhida difere da rede da carteira.',
     })
   }
   if (getScenario().walletRejects) {
@@ -174,7 +173,7 @@ export function disconnectWallet(userId: string, walletId: string): WalletConnec
   const previous = db.walletConnections[walletId]
   const connection: WalletConnection = {
     walletId,
-    network: previous?.network ?? wallet.networks[0] ?? 'ethereum',
+    network: previous?.network ?? wallet.network,
     status: 'disconnected',
     connectedAt: null,
   }

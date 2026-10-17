@@ -11,9 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MercadoRouteImport } from './routes/mercado'
+import { Route as AuthPagamentoRouteImport } from './routes/_auth/pagamento'
 import { Route as AuthPerfilRouteImport } from './routes/_auth/perfil'
+import { Route as EmBreveSecaoRouteImport } from './routes/em-breve.$secao'
 import { Route as NftNftIdRouteImport } from './routes/nft.$nftId'
+import { Route as AuthPedidoOrderIdRouteImport } from './routes/_auth/pedido.$orderId'
+import { Route as AuthPerfilIndexRouteImport } from './routes/_auth/perfil.index'
+import { Route as AuthPerfilCarteirasRouteImport } from './routes/_auth/perfil.carteiras'
+import { Route as AuthPerfilInteressesRouteImport } from './routes/_auth/perfil.interesses'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,54 +33,169 @@ const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarrinhoRoute = CarrinhoRouteImport.update({
+  id: '/carrinho',
+  path: '/carrinho',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MercadoRoute = MercadoRouteImport.update({
+  id: '/mercado',
+  path: '/mercado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthPagamentoRoute = AuthPagamentoRouteImport.update({
+  id: '/pagamento',
+  path: '/pagamento',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthPerfilRoute = AuthPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
   getParentRoute: () => AuthRoute,
 } as any)
+const EmBreveSecaoRoute = EmBreveSecaoRouteImport.update({
+  id: '/em-breve/$secao',
+  path: '/em-breve/$secao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NftNftIdRoute = NftNftIdRouteImport.update({
   id: '/nft/$nftId',
   path: '/nft/$nftId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthPedidoOrderIdRoute = AuthPedidoOrderIdRouteImport.update({
+  id: '/pedido/$orderId',
+  path: '/pedido/$orderId',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPerfilIndexRoute = AuthPerfilIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthPerfilRoute,
+} as any)
+const AuthPerfilCarteirasRoute = AuthPerfilCarteirasRouteImport.update({
+  id: '/carteiras',
+  path: '/carteiras',
+  getParentRoute: () => AuthPerfilRoute,
+} as any)
+const AuthPerfilInteressesRoute = AuthPerfilInteressesRouteImport.update({
+  id: '/interesses',
+  path: '/interesses',
+  getParentRoute: () => AuthPerfilRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cadastro': typeof CadastroRoute
+  '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
-  '/perfil': typeof AuthPerfilRoute
+  '/mercado': typeof MercadoRoute
+  '/pagamento': typeof AuthPagamentoRoute
+  '/perfil': typeof AuthPerfilRouteWithChildren
+  '/em-breve/$secao': typeof EmBreveSecaoRoute
   '/nft/$nftId': typeof NftNftIdRoute
+  '/pedido/$orderId': typeof AuthPedidoOrderIdRoute
+  '/perfil/carteiras': typeof AuthPerfilCarteirasRoute
+  '/perfil/interesses': typeof AuthPerfilInteressesRoute
+  '/perfil/': typeof AuthPerfilIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cadastro': typeof CadastroRoute
+  '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
-  '/perfil': typeof AuthPerfilRoute
+  '/mercado': typeof MercadoRoute
+  '/pagamento': typeof AuthPagamentoRoute
+  '/em-breve/$secao': typeof EmBreveSecaoRoute
   '/nft/$nftId': typeof NftNftIdRoute
+  '/pedido/$orderId': typeof AuthPedidoOrderIdRoute
+  '/perfil/carteiras': typeof AuthPerfilCarteirasRoute
+  '/perfil/interesses': typeof AuthPerfilInteressesRoute
+  '/perfil': typeof AuthPerfilIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
+  '/cadastro': typeof CadastroRoute
+  '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
-  '/_auth/perfil': typeof AuthPerfilRoute
+  '/mercado': typeof MercadoRoute
+  '/_auth/pagamento': typeof AuthPagamentoRoute
+  '/_auth/perfil': typeof AuthPerfilRouteWithChildren
+  '/em-breve/$secao': typeof EmBreveSecaoRoute
   '/nft/$nftId': typeof NftNftIdRoute
+  '/_auth/pedido/$orderId': typeof AuthPedidoOrderIdRoute
+  '/_auth/perfil/carteiras': typeof AuthPerfilCarteirasRoute
+  '/_auth/perfil/interesses': typeof AuthPerfilInteressesRoute
+  '/_auth/perfil/': typeof AuthPerfilIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/perfil' | '/nft/$nftId'
+  fullPaths:
+    | '/'
+    | '/cadastro'
+    | '/carrinho'
+    | '/login'
+    | '/mercado'
+    | '/pagamento'
+    | '/perfil'
+    | '/em-breve/$secao'
+    | '/nft/$nftId'
+    | '/pedido/$orderId'
+    | '/perfil/carteiras'
+    | '/perfil/interesses'
+    | '/perfil/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/perfil' | '/nft/$nftId'
-  id: '__root__' | '/' | '/_auth' | '/login' | '/_auth/perfil' | '/nft/$nftId'
+  to:
+    | '/'
+    | '/cadastro'
+    | '/carrinho'
+    | '/login'
+    | '/mercado'
+    | '/pagamento'
+    | '/em-breve/$secao'
+    | '/nft/$nftId'
+    | '/pedido/$orderId'
+    | '/perfil/carteiras'
+    | '/perfil/interesses'
+    | '/perfil'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/cadastro'
+    | '/carrinho'
+    | '/login'
+    | '/mercado'
+    | '/_auth/pagamento'
+    | '/_auth/perfil'
+    | '/em-breve/$secao'
+    | '/nft/$nftId'
+    | '/_auth/pedido/$orderId'
+    | '/_auth/perfil/carteiras'
+    | '/_auth/perfil/interesses'
+    | '/_auth/perfil/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
+  CadastroRoute: typeof CadastroRoute
+  CarrinhoRoute: typeof CarrinhoRoute
   LoginRoute: typeof LoginRoute
+  MercadoRoute: typeof MercadoRoute
+  EmBreveSecaoRoute: typeof EmBreveSecaoRoute
   NftNftIdRoute: typeof NftNftIdRoute
 }
 
@@ -91,12 +215,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carrinho': {
+      id: '/carrinho'
+      path: '/carrinho'
+      fullPath: '/carrinho'
+      preLoaderRoute: typeof CarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/mercado': {
+      id: '/mercado'
+      path: '/mercado'
+      fullPath: '/mercado'
+      preLoaderRoute: typeof MercadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth/pagamento': {
+      id: '/_auth/pagamento'
+      path: '/pagamento'
+      fullPath: '/pagamento'
+      preLoaderRoute: typeof AuthPagamentoRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/perfil': {
       id: '/_auth/perfil'
@@ -105,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPerfilRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/em-breve/$secao': {
+      id: '/em-breve/$secao'
+      path: '/em-breve/$secao'
+      fullPath: '/em-breve/$secao'
+      preLoaderRoute: typeof EmBreveSecaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nft/$nftId': {
       id: '/nft/$nftId'
       path: '/nft/$nftId'
@@ -112,15 +271,63 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NftNftIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/pedido/$orderId': {
+      id: '/_auth/pedido/$orderId'
+      path: '/pedido/$orderId'
+      fullPath: '/pedido/$orderId'
+      preLoaderRoute: typeof AuthPedidoOrderIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/perfil/': {
+      id: '/_auth/perfil/'
+      path: '/'
+      fullPath: '/perfil/'
+      preLoaderRoute: typeof AuthPerfilIndexRouteImport
+      parentRoute: typeof AuthPerfilRoute
+    }
+    '/_auth/perfil/carteiras': {
+      id: '/_auth/perfil/carteiras'
+      path: '/carteiras'
+      fullPath: '/perfil/carteiras'
+      preLoaderRoute: typeof AuthPerfilCarteirasRouteImport
+      parentRoute: typeof AuthPerfilRoute
+    }
+    '/_auth/perfil/interesses': {
+      id: '/_auth/perfil/interesses'
+      path: '/interesses'
+      fullPath: '/perfil/interesses'
+      preLoaderRoute: typeof AuthPerfilInteressesRouteImport
+      parentRoute: typeof AuthPerfilRoute
+    }
   }
 }
 
+interface AuthPerfilRouteChildren {
+  AuthPerfilCarteirasRoute: typeof AuthPerfilCarteirasRoute
+  AuthPerfilInteressesRoute: typeof AuthPerfilInteressesRoute
+  AuthPerfilIndexRoute: typeof AuthPerfilIndexRoute
+}
+
+const AuthPerfilRouteChildren: AuthPerfilRouteChildren = {
+  AuthPerfilCarteirasRoute: AuthPerfilCarteirasRoute,
+  AuthPerfilInteressesRoute: AuthPerfilInteressesRoute,
+  AuthPerfilIndexRoute: AuthPerfilIndexRoute,
+}
+
+const AuthPerfilRouteWithChildren = AuthPerfilRoute._addFileChildren(
+  AuthPerfilRouteChildren,
+)
+
 interface AuthRouteChildren {
-  AuthPerfilRoute: typeof AuthPerfilRoute
+  AuthPagamentoRoute: typeof AuthPagamentoRoute
+  AuthPerfilRoute: typeof AuthPerfilRouteWithChildren
+  AuthPedidoOrderIdRoute: typeof AuthPedidoOrderIdRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthPerfilRoute: AuthPerfilRoute,
+  AuthPagamentoRoute: AuthPagamentoRoute,
+  AuthPerfilRoute: AuthPerfilRouteWithChildren,
+  AuthPedidoOrderIdRoute: AuthPedidoOrderIdRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -128,7 +335,11 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  CadastroRoute: CadastroRoute,
+  CarrinhoRoute: CarrinhoRoute,
   LoginRoute: LoginRoute,
+  MercadoRoute: MercadoRoute,
+  EmBreveSecaoRoute: EmBreveSecaoRoute,
   NftNftIdRoute: NftNftIdRoute,
 }
 export const routeTree = rootRouteImport
