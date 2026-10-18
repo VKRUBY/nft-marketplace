@@ -13,7 +13,6 @@ import { Toaster } from '@/components/ui/sonner'
 
 // Carregado à parte: só existe com a camada de mocks ligada.
 const ScenarioPanel = lazy(() => import('@/app/scenario-panel').then((m) => ({ default: m.ScenarioPanel })))
-const mocksOn = typeof window !== 'undefined' && Boolean(window.__greenmint)
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -25,6 +24,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
+  // O painel se mostra quando os controles dos mocks ficam disponíveis.
+  const mocksOn = import.meta.env.VITE_ENABLE_MOCKS !== 'false'
   return (
     <>
       <a
@@ -37,7 +38,8 @@ function RootLayout() {
       <RouteAnnouncer />
       <SiteHeader />
       <PendingOrderBanner />
-      <main id="conteudo" tabIndex={-1} className="outline-none">
+      {/* Altura mínima: o rodapé não aparece (e depois é empurrado) enquanto a página carrega — evita CLS. */}
+      <main id="conteudo" tabIndex={-1} className="min-h-dvh outline-none">
         <Outlet />
       </main>
       <SiteFooter />

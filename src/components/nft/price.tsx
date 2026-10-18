@@ -17,6 +17,7 @@ export function Price({
   return (
     <span className={cn('inline-flex flex-wrap items-baseline gap-x-3', className)}>
       <span
+        data-price={value}
         className={cn(
           'font-bold text-accent-strong',
           size === 'sm' && 'text-sm',

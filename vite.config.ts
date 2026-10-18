@@ -11,7 +11,12 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // O MSW só usa tough-cookie para cookies de Set-Cookie, que esta API não
+      // emite; o stub tira ~250 KB do chunk dos mocks (ver o arquivo).
+      'tough-cookie': fileURLToPath(new URL('./src/mocks/vendor/tough-cookie-stub.ts', import.meta.url)),
+    },
   },
   server: { port: 5173 },
   preview: { port: 4173 },

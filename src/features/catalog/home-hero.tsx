@@ -42,7 +42,8 @@ export function HomeHero() {
   const id = useId()
 
   const dots = (
-    <div role="group" aria-label="Escolher destaque" className="flex gap-2">
+    // Alvo de toque de 24 px (WCAG 2.5.8) com o ponto visual de 8 px no centro.
+    <div role="group" aria-label="Escolher destaque" className="-mx-2 flex">
       {SLIDES.map((s, i) => (
         <button
           key={s.alt}
@@ -51,8 +52,16 @@ export function HomeHero() {
           aria-label={`Destaque ${i + 1} de ${SLIDES.length}`}
           aria-current={i === index ? 'true' : undefined}
           aria-controls={id}
-          className={cn('size-2 rounded-full bg-accent transition-opacity', i === index ? 'opacity-100' : 'opacity-50 hover:opacity-80')}
-        />
+          className="group grid size-6 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent-strong"
+        >
+          <span
+            aria-hidden
+            className={cn(
+              'size-2 rounded-full bg-accent transition-opacity motion-reduce:transition-none',
+              i === index ? 'opacity-100' : 'opacity-50 group-hover:opacity-80',
+            )}
+          />
+        </button>
       ))}
     </div>
   )

@@ -1,0 +1,62 @@
+[
+  {
+    "preset": "mobile",
+    "page": "Início",
+    "path": "/",
+    "runs": 3,
+    "performance": 78,
+    "accessibility": 96,
+    "best-practices": 100,
+    "seo": 92,
+    "lcpMs": 3955,
+    "cls": 0,
+    "tbtMs": 336,
+    "fcpMs": 2280,
+    "report": "/home/claude/nft-marketplace/lighthouse-reports/mobile/localhost--2026_10_18_02_09_32.report.html"
+  },
+  {
+    "preset": "mobile",
+    "page": "Detalhe",
+    "path": "/nft/emerald-ape-042",
+    "runs": 3,
+    "performance": 82,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 92,
+    "lcpMs": 3716,
+    "cls": 0,
+    "tbtMs": 249,
+    "fcpMs": 2166,
+    "report": "/home/claude/nft-marketplace/lighthouse-reports/mobile/localhost-nft_emerald_ape_042-2026_10_18_02_10_16.report.html"
+  },
+  {
+    "preset": "desktop",
+    "page": "Início",
+    "path": "/",
+    "runs": 3,
+    "performance": 99,
+    "accessibility": 96,
+    "best-practices": 100,
+    "seo": 92,
+    "lcpMs": 960,
+    "cls": 0,
+    "tbtMs": 2,
+    "fcpMs": 586,
+    "report": "/home/claude/nft-marketplace/lighthouse-reports/desktop/localhost--2026_10_18_02_10_47.report.html"
+  },
+  {
+    "preset": "desktop",
+    "page": "Detalhe",
+    "path": "/nft/emerald-ape-042",
+    "runs": 3,
+    "performance": 99,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 92,
+    "lcpMs": 928,
+    "cls": 0,
+    "tbtMs": 0,
+    "fcpMs": 561,
+    "report": "/home/claude/nft-marketplace/lighthouse-reports/desktop/localhost-nft_emerald_ape_042-2026_10_18_02_11_32.report.html"
+  }
+]

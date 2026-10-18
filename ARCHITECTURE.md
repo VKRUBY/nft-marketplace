@@ -101,9 +101,36 @@ Retomada de contexto:
 - `prefers-reduced-motion`: shimmer, transições e rolagem suave desligados.
 - Verificado com axe (WCAG 2.1 AA) em todas as telas, em 1440 e 390 px, sem overflow horizontal em 320, 390, 768 e 1440 px.
 
-## Estratégia de cache *(detalhes na etapa 4)*
+## Carrinho
 
-Definida em `src/lib/query/client.ts`: `staleTime` de 30 s; retry só para falhas transitórias (no máximo 2, backoff até 4 s); sem retry automático em mutations (o pedido tem retry próprio com a mesma chave); refetch no foco e na reconexão. As chaves isolam dados públicos por parâmetros e dados privados por usuário (`src/lib/query/keys.ts`).
+- **Dono:** visitante (`guest:<uuid>`, enviado em `X-Guest-Cart`) ou conta (`user:<id>`, pelo token). O carrinho vive no servidor (banco simulado), então sobrevive a refresh e a outras abas. O uuid do visitante fica em `localStorage`.
+- **Login:** `POST /cart/merge` soma os itens do visitante ao carrinho da conta (respeitando estoque e limite por pedido) e o visitante passa a usar um uuid novo.
+- **Valores:** subtotal, desconto, taxa de rede e total vêm sempre da API, como strings decimais. O cliente não recalcula nada, só formata para exibição.
+- **Mudanças de preço e estoque:** cada item guarda o preço e a disponibilidade aceitos. Quando um `nft.updated` altera algo, a API devolve o item com `issues` (preço mudou, esgotou, quantidade reduzida). A compra fica bloqueada até o usuário aceitar os novos valores (`POST /cart/acknowledge`). A cotação do pagamento segue a mesma regra, e o envio do pedido revalida no servidor (`409 QUOTE_STALE` / `AVAILABILITY_CONFLICT`), exigindo nova confirmação.
+- **Cupons:** `PUT /cart/coupon`. Inválido e expirado retornam `422` com mensagem por campo.
+- **Após a compra:** o servidor remove do carrinho só as linhas do pedido confirmado (com as quantidades compradas). Itens adicionados depois continuam lá.
+
+## Estratégia de cache
+
+Política global em `src/lib/query/client.ts`, ajustada por consulta:
+
+| Dado | Chave | staleTime | Observações |
+| --- | --- | --- | --- |
+| Lista do catálogo | `['nfts','list',params]` | 30 s | `keepPreviousData` ao trocar filtros e páginas; eventos atualizam no lugar |
+| Destaques | `['nfts','highlights']` | 60 s | atualizados por `nft.updated` |
+| Facetas | `['nfts','facets']` | 5 min | mudam raramente |
+| Detalhe | `['nfts','detail',idOrSlug]` | 30 s | prefetch no loader da rota; eventos atualizam no lugar |
+| Sessão | `['session']` | 60 s | validada no boot; `null` após 401 |
+| Carrinho | `['cart',owner,network]` | 15 s | por dono; mutations gravam a resposta da API e invalidam as outras redes |
+| Cotação | `['private',uid,'quote',network]` | 60 s | sem refetch no foco (cada busca cria uma cotação); invalidada por eventos de itens do carrinho |
+| Pedido | `['private',uid,'orders',id]` | 30 s | polling de 4 s só enquanto `pending`, como rede de segurança do socket |
+| Pedidos ativos | `['private',uid,'orders','active']` | 10 s | alimenta o aviso global de pedido pendente |
+| Perfil, carteiras, favoritos | `['private',uid,…]` | 30 s | favoritos com atualização otimista e rollback |
+
+- **Retry:** até 2 novas tentativas, só para falhas transitórias (rede, timeout, 5xx com `retryable`), com backoff exponencial até 4 s. 4xx nunca é repetido. Mutations não têm retry automático; a criação de pedido tem retry próprio com a mesma chave de idempotência.
+- **Revalidação:** ao focar a janela, ao voltar a conexão e após reconectar o socket (`refetchType: 'active'`).
+- **Isolamento:** tudo que é privado fica sob `['private', userId]` e é removido no logout, na expiração e na troca de usuário, junto com o carrinho e o registro de versões de pedidos.
+- **Ordem das respostas:** cada consulta é cancelada (`AbortSignal`) quando a chave muda, e o registro de versões impede que uma resposta REST antiga sobrescreva um evento mais novo.
 
 ## Mocks (MSW)
 
@@ -125,6 +152,19 @@ O socket.io-client abre um WebSocket (`transports: ['websocket']`) para `VITE_SO
 6. **Socket fechado no handshake** (ex.: StrictMode) não dispara `close` no handler; o hub verifica o `readyState` e descarta inscrições órfãs.
 7. **Versões:** o binding declara compatibilidade com MSW 2.x; por isso o MSW está fixado em 2.15.
 8. **Só WebSocket:** o fallback de long-polling HTTP não é simulado.
+
+## Testes E2E (Playwright)
+
+- `e2e/*.spec.ts`, rodando no Chromium em dois projetos: **desktop** (1440×900) e **mobile** (390×844, toque). Os testes rodam contra o build de produção (`vite preview`) com os mocks ligados, como no deploy.
+- **Isolamento:** cada teste usa um `BrowserContext` novo (localStorage, sessionStorage e service worker vazios) e abre o app com `?scenario=<id>&mock-reset=1`. A ordem não importa e os testes rodam em paralelo.
+- **Servidor simulado:** os testes mudam preços, estoque, sessões e a conexão pelos controles do MSW (`window.__greenmint`, ver `e2e/fixtures.ts`). A UI reage pelas respostas REST e pelos eventos Socket.IO, sem setters de UI.
+- **Cobertura:** catálogo (URL, filtros, ordenação, paginação, vazio, erros, respostas fora de ordem), detalhe (acesso direto, 404, edição indisponível, limite, favoritos), carrinho (CRUD, persistência, ETH, cupons, tempo real), sessão (mescla, expiração com retomada, logout, troca de usuário, hash de senha), pagamento (validação, revisão, carteira, idempotência por cliques e por timeout, confirmado, recusado, preço muda, esgota, remoção parcial do carrinho), tempo real (duplicatas, eventos antigos, reconexão, pedido pendente com refresh, isolamento entre usuários), contratos (envelope de erro, conflito de idempotência, 403, pedido de outra conta, reset), acessibilidade (axe WCAG 2.1 AA, teclado, foco, overflow, zoom, reduced motion) e regressão visual.
+- **Regressão visual:** início, detalhe, carrinho e pagamento, nos dois projetos (`e2e/__screenshots__/<projeto>/`). Movimento reduzido, fontes e imagens carregadas, painel de cenários e toasts ocultos. As baselines dependem do renderizador de fontes: gere-as no mesmo ambiente do CI (`npm run test:e2e:update -- visual`).
+- **Artefatos:** relatório HTML em `playwright-report/` e trace guardado nas falhas (`retain-on-failure`).
+
+## Performance
+
+Medido com `npm run lighthouse`: Lighthouse CI com 3 execuções por URL e mediana, throttling simulado padrão (mobile: 4G lento, CPU 4×). O resumo fica em `lighthouse-reports/summary.md`.
 
 ## Desvios e decisões
 

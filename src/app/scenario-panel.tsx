@@ -13,9 +13,10 @@ import { percentOfEth, addEth } from '@/shared/eth'
  * mesmos caminhos de produção — REST e Socket.IO —, nunca por setters de UI.
  */
 export function ScenarioPanel() {
-  const controls = typeof window !== 'undefined' ? window.__greenmint : undefined
+  // Os mocks iniciam antes do primeiro render (main.tsx).
+  const available = typeof window !== 'undefined' && Boolean(window.__greenmint)
   const [open, setOpen] = useState(false)
-  if (!controls) return null
+  if (!available) return null
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -82,7 +83,13 @@ function PanelBody() {
           {selected?.description}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => controls.setScenario(scenarioId)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              controls.setScenario(scenarioId)
+              window.location.reload()
+            }}
+          >
             Aplicar e recarregar
           </Button>
           <Button
