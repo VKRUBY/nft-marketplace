@@ -11,7 +11,7 @@ import { formatEth } from '@/shared/eth'
 import type { z } from 'zod'
 import { useConnectWallet, usePlaceOrder } from './use-checkout'
 
-type Phase = 'review' | 'connecting' | 'submitting'
+type Phase = 'review' | 'connecting' | 'submitting' | 'done'
 
 /**
  * Revisão antes do envio. O usuário vê exatamente a cotação que será
@@ -87,10 +87,13 @@ export function ReviewDialog({
         },
         onRetry: setRetrying,
       })
+      // Pedido criado: o diálogo fica travado até a navegação. Sem isso, um
+      // clique logo depois enviaria a cotação renovada pelo evento de estoque
+      // da própria reserva — conteúdo novo, chave nova, segundo pedido.
+      setPhase('done')
       onCreated(order)
     } catch {
       /* erro exibido abaixo */
-    } finally {
       setPhase('review')
     }
   }
@@ -103,7 +106,7 @@ export function ReviewDialog({
         <DialogTitle className="text-xl">Revise seu pedido</DialogTitle>
         <DialogDescription className="mt-1">Confira os valores. Ao confirmar, sua carteira será conectada e o pedido enviado.</DialogDescription>
 
-        {(changedFrom || stale) && (
+        {(changedFrom || stale) && phase !== 'done' && (
           <div role="alert" className="mt-5 flex gap-2 rounded-md border border-accent bg-band p-3 text-sm">
             <AlertTriangleIcon className="size-5 shrink-0 text-accent-strong" aria-hidden />
             <div>
@@ -184,7 +187,7 @@ export function ReviewDialog({
             Voltar
           </Button>
           <Button onClick={() => void confirm()} disabled={busy || hasIssues} aria-disabled={busy || hasIssues}>
-            {busy ? 'Processando…' : changedFrom || stale ? 'Confirmar novos valores' : apiError ? 'Tentar novamente' : 'Confirmar e enviar'}
+            {phase === 'done' ? 'Pedido enviado' : busy ? 'Processando…' : changedFrom || stale ? 'Confirmar novos valores' : apiError ? 'Tentar novamente' : 'Confirmar e enviar'}
           </Button>
         </div>
       </DialogContent>

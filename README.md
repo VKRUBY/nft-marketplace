@@ -2,7 +2,7 @@
 
 Marketplace de NFTs em React + TypeScript com descoberta, compra e conta do colecionador. Toda a API (REST e Socket.IO) é simulada no navegador com MSW, então o projeto roda a partir de um checkout limpo, sem backend.
 
-> Status: **etapa 2 de 4** — contratos, mocks, tempo real e todas as telas do Figma (desktop e mobile) implementadas; testes Playwright, Lighthouse e documentação final nas próximas etapas.
+**Demo:** https://nft-marketplace-vkruby.vercel.app · **Repositório:** https://github.com/VKRUBY/nft-marketplace
 
 ## Stack
 
@@ -26,8 +26,10 @@ npm run dev        # http://localhost:5173 (mocks ligados)
 | `npm run preview` | Serve o build em http://localhost:4173 |
 | `npm run typecheck` | `tsc -b` |
 | `npm run lint` | oxlint |
-| `npm run test:e2e` | Testes Playwright *(etapa 4)* |
-| `npm run lighthouse` | Auditoria Lighthouse CI *(etapa 4)* |
+| `npm run test:e2e` | Testes Playwright (desktop e mobile) contra o build de produção |
+| `npm run test:e2e:update` | Regrava as baselines de regressão visual |
+| `npm run test:report` | Abre o relatório HTML do último `test:e2e` |
+| `npm run lighthouse` | Lighthouse CI: início e detalhe, mobile e desktop, 3 execuções, mediana (rode `npm run build` antes) |
 
 ## Variáveis de ambiente
 
@@ -118,6 +120,28 @@ __greenmint.replayNftEvent('nft_001', 'previous')  // evento antigo
 __greenmint.dropRealtime()                          // derruba o socket
 __greenmint.expireSessions()                        // expira sessões
 ```
+
+## Testes
+
+```bash
+npx playwright install chromium   # primeira vez (ou PW_CHANNEL=chrome para usar o Chrome instalado)
+npm run test:e2e                  # sobe build + preview sozinho; relatório em playwright-report/
+npm run test:e2e -- checkout      # só um arquivo
+npm run test:report               # relatório HTML com traces das falhas
+```
+
+Os testes isolam o estado (contexto novo por teste, banco simulado restaurado) e controlam o "servidor" pelos controles do MSW. As baselines visuais ficam em `e2e/__screenshots__/`.
+
+## Lighthouse
+
+```bash
+npm run build
+npm run lighthouse                                      # mobile + desktop
+LH_PRESETS=mobile npm run lighthouse                    # só um perfil
+LH_BASE_URL=https://nft-marketplace-vkruby.vercel.app npm run lighthouse   # mede o deploy
+```
+
+Relatórios HTML em `lighthouse-reports/<perfil>/`; mediana com LCP, CLS e TBT em `lighthouse-reports/summary.md`. Resultados e análise: [ARCHITECTURE.md › Performance](./ARCHITECTURE.md#performance).
 
 ## Deploy
 

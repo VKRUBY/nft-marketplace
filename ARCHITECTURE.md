@@ -166,6 +166,31 @@ O socket.io-client abre um WebSocket (`transports: ['websocket']`) para `VITE_SO
 
 Medido com `npm run lighthouse`: Lighthouse CI com 3 execuções por URL e mediana, throttling simulado padrão (mobile: 4G lento, CPU 4×). O resumo fica em `lighthouse-reports/summary.md`.
 
+Mediana de 3 execuções, build de demonstração servido pelo `vite preview` (gzip) em 18/10/2026:
+
+| Página | Perfil | Perf | A11y | BP | SEO | LCP | CLS | TBT |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Início | mobile | **78** | 100 | 100 | 100 | 3,95 s | 0 | 339 ms |
+| Detalhe | mobile | **80** | 100 | 100 | 100 | 3,98 s | 0 | 251 ms |
+| Início | desktop | 99 | 100 | 100 | 100 | 0,96 s | 0 | 10 ms |
+| Detalhe | desktop | 98 | 100 | 100 | 100 | 1,00 s | 0 | 0 ms |
+
+**Meta não atingida: Perf ≥ 90 no mobile.** As demais metas (A11y ≥ 95, BP ≥ 95, SEO ≥ 90, e Perf no desktop) foram atingidas.
+
+Por que o mobile fica em ~80: o LCP é a imagem do primeiro NFT, que depende dos dados da API. Na demo, a API é o próprio MSW rodando no navegador. O caminho crítico é: HTML → JS do app e dos mocks (~260 KB gzip no total, baixados em paralelo) → avaliação na CPU 4× mais lenta (~2,3 s de main thread no total) → registro do service worker → render → requisição → imagem. Quase todo o LCP é "load delay" (~3 s antes de a imagem começar a baixar). A latência artificial dos cenários não pesa: com `?scenario=fast` o resultado é o mesmo. Em produção, sem o MSW no bundle, esse custo sai do caminho crítico.
+
+O que foi feito (medido antes e depois):
+- **Stub do `tough-cookie`** no bundle do MSW (`src/mocks/vendor/tough-cookie-stub.ts`): o MSW só o usa para cookies de `Set-Cookie`, que esta API não emite. O chunk dos mocks caiu de 176 KB para 57 KB gzip.
+- **`socket.io-client` sob demanda:** sai do bundle inicial. Isso também permite baixar o app em paralelo com os mocks, em vez de esperar por eles.
+- **CLS:** altura mínima no `main`, para o rodapé não aparecer e depois ser empurrado. O detalhe no desktop foi de CLS 0,18 para 0.
+- **Alvos de toque** de 24 px nos pontos do carrossel e `robots.txt` (A11y e SEO de 96/92 para 100).
+
+O que foi testado e descartado por piorar a nota:
+- **Renderizar antes de os mocks ficarem prontos**, segurando só as requisições: o FCP não melhora, e a avaliação do MSW vira uma tarefa longa depois do primeiro paint (TBT de ~300 para ~420 ms).
+- **Tirar as rotas de entrada do code splitting:** elimina uma onda de requisições, mas aumenta a avaliação síncrona (TBT maior, Perf 74–77).
+
+Caminho possível para os 90 no mobile, não implementado: pré-renderizar o HTML da home e do detalhe no build (o seed é determinístico), para o LCP não depender de JS e dos mocks. Ficou de fora porque mostraria preços e estoques estáticos antes da hidratação, em conflito com os requisitos de dados em tempo real.
+
 ## Desvios e decisões
 
 - **shadcn/ui sem CLI:** o registro `ui.shadcn.com` não estava acessível no ambiente de desenvolvimento usado. Os componentes foram escritos a partir do código-fonte canônico do shadcn/ui sobre as mesmas dependências (Radix, cva, tailwind-merge, lucide). `components.json` está no repositório, então `npx shadcn add` funciona em uma máquina com acesso.

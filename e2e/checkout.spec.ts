@@ -85,7 +85,8 @@ test.describe('Pagamento', () => {
     await app.confirmButton().click()
     const send = app.reviewDialog().getByRole('button', { name: 'Confirmar e enviar' })
     await send.dblclick()
-    await send.click({ force: true }).catch(() => {})
+    // Terceiro clique com o diálogo possivelmente já fechando; não pode virar um segundo pedido.
+    await send.click({ force: true, timeout: 1_000 }).catch(() => {})
     await page.waitForURL(/\/pedido\//)
     await expect(app.orderStatus()).toHaveAttribute('data-order-status', 'confirmed', { timeout: 10_000 })
     expect(await app.userOrders()).toHaveLength(1)
