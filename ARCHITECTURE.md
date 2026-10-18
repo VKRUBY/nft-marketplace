@@ -87,6 +87,20 @@ Envelope: `{ eventId, type, resource: { type, id }, version, occurredAt, data }`
 
 Token em `localStorage` (em produção seria um cookie httpOnly; como a API roda no próprio navegador via MSW, não há servidor para emiti-lo). No boot, `GET /auth/session` valida o token. Um 401 em qualquer chamada autenticada encerra a sessão local e leva ao login com `redirect` para retomar o fluxo. O login mescla o carrinho do visitante. O logout e a troca de usuário removem todo o cache sob `['private', userId]` e o carrinho, e reabrem o socket com a nova identidade. Cada sessão tem a própria instância de socket, então eventos da anterior não chegam à nova.
 
+Retomada de contexto:
+- **Expiração** (401 numa chamada ou `session.rejected` no socket): o `AuthBridge` limpa token e cache privado e leva ao login com `redirect=<rota atual>` e `reason=expired`. O rascunho do pagamento (`sessionStorage`, `kurio:checkout-draft:<userId>`) é **mantido**, então o formulário volta preenchido após o novo login. Rotas protegidas (`_auth`) também validam a sessão na navegação.
+- **Logout explícito**: além do cache privado, apaga o rascunho do pagamento, que contém dados pessoais.
+- **Pedido em andamento**: a chave de idempotência da tentativa fica em `sessionStorage` (`kurio:order-attempt:<userId>`), e `GET /orders/active` alimenta um aviso global "pedido aguardando confirmação" em qualquer página, então refresh, queda do socket ou outra aba não levam a uma segunda compra. Quando o pedido é confirmado ou recusado fora da página dele, um aviso (deduplicado pelo id do pedido) informa o desfecho.
+
+## Acessibilidade
+
+- Navegação SPA: ao mudar de página (pathname), o foco vai para `main#conteudo` e o novo título é anunciado numa região `aria-live` (`RouteAnnouncer`). Mudanças só de filtros e paginação não movem o foco; a paginação leva o foco ao título dos resultados. O carregamento inicial não move o foco, então o primeiro Tab chega ao link "Pular para o conteúdo".
+- Diálogos e drawers (Radix): foco preso, Esc fecha, o foco volta ao gatilho. Login e cadastro focam o primeiro campo.
+- Formulários: erros ligados por `aria-describedby` com `aria-invalid`; ao enviar inválido, o foco vai ao primeiro campo com erro.
+- Edições do NFT: `radiogroup` com setas, e mover com as setas também seleciona (padrão ARIA).
+- `prefers-reduced-motion`: shimmer, transições e rolagem suave desligados.
+- Verificado com axe (WCAG 2.1 AA) em todas as telas, em 1440 e 390 px, sem overflow horizontal em 320, 390, 768 e 1440 px.
+
 ## Estratégia de cache *(detalhes na etapa 4)*
 
 Definida em `src/lib/query/client.ts`: `staleTime` de 30 s; retry só para falhas transitórias (no máximo 2, backoff até 4 s); sem retry automático em mutations (o pedido tem retry próprio com a mesma chave); refetch no foco e na reconexão. As chaves isolam dados públicos por parâmetros e dados privados por usuário (`src/lib/query/keys.ts`).

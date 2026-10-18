@@ -72,14 +72,12 @@ export function SummaryValues({ subtotal, discount, fee, total }: { subtotal: st
           (-) {hasDiscount ? `${formatEth(discount)} ETH` : '00.00'}
         </dd>
       </div>
-      <div className="flex flex-col">
-        <div className="flex justify-between">
-          <dt>Taxa de rede</dt>
-          <dd className="text-lg" data-testid="summary-fee">
-            {formatEth(fee, { maxDecimals: 5, minDecimals: 3 })} ETH
-          </dd>
-        </div>
-        <p className="text-right text-xs text-accent-strong">Taxa estimada</p>
+      <div className="flex flex-wrap justify-between">
+        <dt>Taxa de rede</dt>
+        <dd className="text-right text-lg" data-testid="summary-fee">
+          {formatEth(fee, { maxDecimals: 5, minDecimals: 3 })} ETH
+          <span className="block text-xs text-accent-strong">Taxa estimada</span>
+        </dd>
       </div>
       <div className="mt-3 flex justify-between border-t border-line pt-4 text-lg font-bold">
         <dt>Total</dt>

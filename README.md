@@ -81,6 +81,30 @@ http://localhost:5173/?scenario=price-change&mock-reset=1   # também restaura o
 | `wallet-rejected` | Conexão da carteira é recusada |
 | `realtime-chaos` | Eventos duplicados e antigos |
 
+### Painel de cenários
+
+Com os mocks ligados, o botão **Cenários** (canto inferior esquerdo no desktop, aba na borda esquerda no mobile) abre um painel acessível para:
+- trocar o cenário e recarregar, ou restaurar os dados iniciais;
+- simular eventos de servidor num NFT (o da página aberta vem pré-selecionado): subir preço, esgotar, repor, reenviar evento duplicado ou antigo;
+- derrubar ou bloquear o socket e expirar a sessão.
+
+O painel só chama os controles do servidor simulado abaixo; a interface reage pelas respostas REST e eventos Socket.IO, nunca por setters de UI. Ele é carregado num chunk separado e não existe com `VITE_ENABLE_MOCKS=false`.
+
+### Como reproduzir os fluxos de falha
+
+| Fluxo | Passos |
+| --- | --- |
+| Preço muda com o carrinho aberto | Adicione um item, abra o carrinho ou o pagamento e use **Subir preço 10%** no painel: o resumo avisa, bloqueia a compra e pede **Aceitar novos valores**. Ou `?scenario=price-change`. |
+| Esgota durante a compra | `?scenario=sold-out&mock-reset=1`, faça login, compre: o envio retorna conflito e a revisão mostra a cotação nova. |
+| Timeout após criar o pedido | `?scenario=order-timeout&mock-reset=1`: o cliente refaz o envio com a mesma chave de idempotência e recebe o mesmo pedido (um só no banco). |
+| Pedido pendente + queda/refresh | `?scenario=slow-payment&mock-reset=1`, compre, use **Bloquear socket** e recarregue: o pedido segue pendente e é retomado via REST; navegue para outra página para ver o aviso global; libere o socket e o desfecho chega como aviso. |
+| Pagamento recusado | `?scenario=payment-declined&mock-reset=1`: o pedido termina recusado e o carrinho é mantido. |
+| Carteira recusa conexão | `?scenario=wallet-rejected&mock-reset=1`. |
+| Sessão expira no checkout | Logado no pagamento, preencha a observação e use **Expirar sessão**; ao confirmar, o app leva ao login e, após entrar, volta ao pagamento com o rascunho preservado. |
+| Troca de usuário | Saia como Ana e entre como Bruno: carrinho, favoritos, carteiras e rascunho da Ana não aparecem. |
+| Eventos duplicados/antigos | `?scenario=realtime-chaos` ou os botões de evento no painel: nenhuma regressão de preço/estoque. |
+| Falhas de rede | `?scenario=offline`, `flaky`, `server-error`, `out-of-order`, `slow`. |
+
 ### Controles de teste
 
 Com os mocks ligados, `window.__greenmint` expõe ações que passam pelo banco simulado e chegam à aplicação pelos mesmos caminhos de produção (REST via MSW e eventos via socket.io-client):

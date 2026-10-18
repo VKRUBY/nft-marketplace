@@ -31,7 +31,7 @@ export function AccountLayout() {
   const router = useRouter()
 
   return (
-    <div className="container-page grid gap-8 pt-6 pb-10 md:grid-cols-[220px_1fr] md:pt-8 lg:grid-cols-[310px_1fr] lg:gap-7">
+    <div className="container-page grid grid-cols-1 gap-8 pt-6 pb-10 md:grid-cols-[220px_minmax(0,1fr)] md:pt-8 lg:grid-cols-[310px_1fr] lg:gap-7">
       <nav aria-label="Meu perfil" className="self-start bg-surface pt-6 pb-3 max-md:-mx-4 max-md:overflow-x-auto max-md:pt-3 max-md:pb-0">
         <h2 className="mb-2 px-2.5 text-xl font-bold max-md:sr-only">Meu perfil</h2>
         <ul className="flex md:flex-col">

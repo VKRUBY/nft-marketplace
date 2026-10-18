@@ -46,14 +46,15 @@ export function CatalogSection({ search }: { search: CatalogSearch }) {
 
   // Ao trocar de página, leva o foco e a rolagem para o início dos resultados.
   const page = search.page ?? 1
-  const firstRender = useRef(true)
+  const lastPage = useRef(page)
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false
-      return
-    }
+    // Compara com a página anterior (e não com "primeira execução"), o que
+    // resiste ao efeito duplo do StrictMode e não rouba o foco ao carregar.
+    if (lastPage.current === page) return
+    lastPage.current = page
     headingRef.current?.focus({ preventScroll: true })
-    headingRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById('catalogo')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' })
   }, [page])
 
   const activeFilters = [
@@ -81,7 +82,7 @@ export function CatalogSection({ search }: { search: CatalogSearch }) {
 
   return (
     <section id="catalogo" aria-labelledby={resultsId} className="container-page scroll-mt-6 pt-6 md:pt-24">
-      <div className="grid gap-8 md:grid-cols-[minmax(0,240px)_1fr] lg:grid-cols-[310px_1fr] lg:gap-12">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,240px)_1fr] lg:grid-cols-[310px_1fr] lg:gap-12">
         <aside aria-label="Filtros do catálogo" className="hidden md:block">
           <div className="bg-surface px-3 py-6 lg:px-5">
             <CatalogFilters search={search} onChange={update} />
@@ -91,8 +92,8 @@ export function CatalogSection({ search }: { search: CatalogSearch }) {
 
         <div className="min-w-0">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 md:mb-7">
-            <nav aria-label="Seções do catálogo">
-              <ul className="flex gap-4 md:gap-5">
+            <nav aria-label="Seções do catálogo" className="max-w-full overflow-x-auto">
+              <ul className="flex gap-3 xs:gap-4 md:gap-5">
                 {TABS.map((tab) => {
                   const active = (search.tab ?? 'all') === tab.id
                   return (
@@ -103,7 +104,7 @@ export function CatalogSection({ search }: { search: CatalogSearch }) {
                         resetScroll={false}
                         aria-current={active ? 'true' : undefined}
                         className={cn(
-                          'block border-b-2 border-transparent pb-0.5 text-sm font-medium whitespace-nowrap md:text-base',
+                          'block border-b-2 border-transparent pb-0.5 text-[13px] font-medium whitespace-nowrap xs:text-sm md:text-base',
                           active ? 'border-accent text-accent-strong' : 'hover:text-accent-strong',
                         )}
                       >

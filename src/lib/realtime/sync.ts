@@ -95,6 +95,14 @@ export function installRealtimeSync(queryClient: QueryClient, getUserId: () => s
     if (data.status === 'confirmed') {
       void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all })
     }
+    // Fora da página do pedido, avisa o desfecho (a própria página já anuncia).
+    // O id do aviso evita repetição em eventos duplicados ou reenviados.
+    const onOrderPage = window.location.pathname === `/pedido/${encodeURIComponent(data.orderId)}`
+    if (!onOrderPage && data.status === 'confirmed') {
+      notify.success('Compra confirmada', 'Seus NFTs já estão na carteira escolhida.', `order:${data.orderId}`)
+    } else if (!onOrderPage && data.status === 'declined') {
+      notify.error('Pagamento recusado', data.declineReason ?? 'Nenhum valor foi cobrado.', `order:${data.orderId}`)
+    }
   }
 
   const offEvent = realtimeClient.onEvent((event) => {

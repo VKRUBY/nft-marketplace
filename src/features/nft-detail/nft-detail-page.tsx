@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
 import { HeartIcon, MailIcon, SearchIcon, ShoppingCartIcon, StarIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
@@ -102,7 +103,7 @@ function Detail({ nft, editionParam }: { nft: Nft; editionParam?: string }) {
       />
       <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado', to: '/mercado' }, { label: nft.name }]} />
 
-      <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[100px_444px_1fr] lg:gap-7 xl:gap-[28px_33px]">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[100px_444px_1fr] lg:gap-7 xl:gap-[28px_33px]">
         {/* Miniaturas: vistas da mesma obra */}
         <ul aria-label="Miniaturas" className="order-2 hidden gap-3 md:flex lg:order-none lg:flex-col lg:gap-4">
           {nft.images.map((img, i) => (
@@ -159,32 +160,41 @@ function Detail({ nft, editionParam }: { nft: Nft; editionParam?: string }) {
           <h2 className="mt-5 text-base font-bold max-md:sr-only">Sobre este NFT:</h2>
           <p className="mt-2 text-sm leading-6 text-sand">{nft.description}</p>
 
-          <fieldset className="mt-4">
-            <legend className="text-base font-bold">Edição:</legend>
-            <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Edição">
+          <div className="mt-4">
+            <p id="edition-label" className="text-base font-bold">
+              Edição:
+            </p>
+            <RadioGroupPrimitive.Root
+              aria-labelledby="edition-label"
+              value={selected.id}
+              onValueChange={(id) => {
+                const edition = nft.editions.find((e) => e.id === id)
+                if (edition) selectEdition(edition)
+              }}
+              orientation="horizontal"
+              className="mt-2 flex flex-wrap gap-2"
+            >
               {nft.editions.map((edition) => {
-                const active = edition.id === selected.id
                 const soldOut = edition.available === 0
                 return (
-                  <button
+                  <RadioGroupPrimitive.Item
                     key={edition.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => selectEdition(edition)}
+                    value={edition.id}
+                    // Padrão ARIA de radio: mover com as setas também seleciona.
+                    onFocus={() => edition.id !== selected.id && selectEdition(edition)}
                     className={cn(
-                      'rounded-full border px-2 py-0.5 text-sm transition-colors',
-                      active ? 'border-accent text-accent-strong' : 'border-line text-sand hover:border-sand',
+                      'rounded-full border px-2 py-0.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent-strong',
+                      'border-line text-sand hover:border-sand data-[state=checked]:border-accent data-[state=checked]:text-accent-strong',
                       soldOut && 'line-through decoration-sand/70',
                     )}
                   >
                     {edition.label}
                     {soldOut && <span className="sr-only"> (indisponível)</span>}
-                  </button>
+                  </RadioGroupPrimitive.Item>
                 )
               })}
-            </div>
-          </fieldset>
+            </RadioGroupPrimitive.Root>
+          </div>
 
           <div className="mt-4 hidden flex-wrap items-center justify-between gap-4 md:flex">
             <QuantityStepper value={quantity} max={limit} onChange={setQuantity} disabled={unavailable} label={`Quantidade de ${nft.name}`} />

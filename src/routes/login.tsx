@@ -24,7 +24,7 @@ export const Route = createFileRoute('/login')({
     return (
       <>
         <div aria-hidden inert>
-          <HomePage search={{}} />
+          <HomePage search={{}} title={false} />
         </div>
         <AuthDialog mode="login" search={search} />
       </>

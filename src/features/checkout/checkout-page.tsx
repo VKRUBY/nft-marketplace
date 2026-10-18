@@ -153,7 +153,7 @@ function CheckoutForm({ userId, user, wallets }: { userId: string; user: User; w
       <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado', to: '/mercado' }, { label: 'Pagamento' }]} />
       <h1 className="sr-only max-md:hidden">Pagamento</h1>
 
-      <form noValidate onSubmit={onSubmit} className="grid gap-10 lg:grid-cols-[minmax(0,763px)_405px] lg:justify-between">
+      <form noValidate onSubmit={onSubmit} className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,763px)_405px] lg:justify-between">
         {/* Coluna esquerda: perfil do colecionador */}
         <section aria-labelledby="buyer-title" className="order-2 lg:order-none">
           <button

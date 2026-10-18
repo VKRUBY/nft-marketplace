@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 
-/** Título da aba por página (anunciado por leitores de tela ao navegar). */
-export function useDocumentTitle(title: string) {
+/** Título da aba por página (anunciado pelo RouteAnnouncer ao navegar). `null` não altera o título. */
+export function useDocumentTitle(title: string | null) {
   useEffect(() => {
-    document.title = title
+    if (title !== null) document.title = title
   }, [title])
 }

@@ -38,7 +38,7 @@ export function CartPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,782px)_332px] lg:justify-between">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,782px)_332px] lg:justify-between">
           <section aria-labelledby="cart-items-title">
             <h2 id="cart-items-title" className="sr-only">
               Itens do carrinho

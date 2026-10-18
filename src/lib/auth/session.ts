@@ -14,7 +14,8 @@ import { sessionStore } from '../session-store'
  *    login com `redirect` para retomar o fluxo (ver AuthBridge);
  *  - login/troca de usuário: mescla o carrinho do visitante e remove o cache
  *    privado do usuário anterior; o AuthBridge reabre o socket ao ver o novo token;
- *  - logout: avisa a API, limpa token, cache privado, carrinho e socket.
+ *  - logout: avisa a API, limpa token, cache privado, carrinho, rascunho do
+ *    pagamento e socket.
  */
 
 export const sessionQuery = queryOptions({
@@ -75,7 +76,17 @@ export async function signOut(queryClient: QueryClient, { callApi = true } = {})
       /* o logout local acontece de qualquer forma */
     }
   }
+  const userId = queryClient.getQueryData<Session | null>(queryKeys.session)?.user.id
   sessionStore.setToken(null)
   clearPrivateState(queryClient)
   queryClient.setQueryData(queryKeys.session, null)
+  // Logout explícito descarta o rascunho do pagamento (dados pessoais).
+  // Na expiração ele é mantido para a retomada após novo login.
+  if (userId) {
+    try {
+      sessionStorage.removeItem(`kurio:checkout-draft:${userId}`)
+    } catch {
+      /* sem storage */
+    }
+  }
 }

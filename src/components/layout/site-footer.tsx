@@ -24,7 +24,7 @@ export function SiteFooter() {
   return (
     <footer className="container-page mt-16 pb-24 md:mt-24 md:pb-0">
       <div className="bg-surface">
-        <section aria-label="Benefícios" className="grid gap-8 px-6 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0 lg:px-12">
+        <section aria-label="Benefícios" className="grid grid-cols-1 gap-8 px-6 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0 lg:px-12">
           {FEATURES.map((f) => (
             <div key={f.letter} className="lg:border-r lg:border-accent lg:pr-6 lg:pl-0 [&:not(:first-child)]:lg:pl-4">
               <span aria-hidden className="mb-4 grid size-[74px] place-items-center rounded-full bg-accent text-2xl font-bold text-ink">
@@ -36,7 +36,7 @@ export function SiteFooter() {
           ))}
           <NewsletterForm />
         </section>
-        <div className="grid gap-3 bg-band px-6 py-6 text-sm sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        <div className="grid grid-cols-1 gap-3 bg-band px-6 py-6 text-sm sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
           <p className="font-bold tracking-[0.12em]">KURIO</p>
           <p className="max-w-[28ch]">Feito para colecionadores, criadores e cultura</p>
           <a href="mailto:contato@email.com" className="hover:text-accent-strong">
@@ -46,7 +46,7 @@ export function SiteFooter() {
             +55 11 4002 8922
           </a>
         </div>
-        <div className="grid gap-8 px-6 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 px-6 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
           <FooterColumn title="Meu perfil">
             <FooterLink to="/perfil">Meu perfil</FooterLink>
             <FooterSoon section="colecao">Minha coleção</FooterSoon>

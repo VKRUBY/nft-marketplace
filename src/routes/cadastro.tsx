@@ -19,7 +19,7 @@ export const Route = createFileRoute('/cadastro')({
     return (
       <>
         <div aria-hidden inert>
-          <HomePage search={{}} />
+          <HomePage search={{}} title={false} />
         </div>
         <AuthDialog mode="register" search={search} />
       </>

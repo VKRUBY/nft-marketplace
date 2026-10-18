@@ -21,9 +21,9 @@ const PROMOS = [
 
 export function HomePromos() {
   return (
-    <section aria-label="Coleções em destaque" className="container-page mt-20 grid gap-6 md:mt-24 lg:grid-cols-2 lg:gap-7">
+    <section aria-label="Coleções em destaque" className="container-page mt-20 grid grid-cols-1 gap-6 md:mt-24 lg:grid-cols-2 lg:gap-7">
       {PROMOS.map((p) => (
-        <article key={p.title} className="grid grid-cols-[minmax(0,287px)_1fr] items-center gap-2 bg-surface">
+        <article key={p.title} className="grid grid-cols-[minmax(0,42%)_minmax(0,1fr)] items-center sm:grid-cols-[minmax(0,287px)_minmax(0,1fr)] gap-2 bg-surface">
           <img
             src={`/assets/nfts/${p.img}-400.webp`}
             srcSet={`/assets/nfts/${p.img}-400.webp 400w, /assets/nfts/${p.img}-750.webp 750w`}
@@ -66,7 +66,7 @@ export function MintJournal() {
       <p className="mx-auto mt-3 max-w-xl text-center text-sm text-sand">
         Histórias, guias e insights para colecionadores sobre o universo da propriedade digital.
       </p>
-      <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-7">
+      <ul className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-7">
         {POSTS.map((post) => (
           <li key={post.title}>
             <article className="group relative flex h-full flex-col overflow-hidden rounded-lg bg-surface">
