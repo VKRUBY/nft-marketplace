@@ -26,7 +26,7 @@ npm run dev        # http://localhost:5173 (mocks ligados)
 | `npm run preview` | Serve o build em http://localhost:4173 |
 | `npm run typecheck` | `tsc -b` |
 | `npm run lint` | oxlint |
-| `npm run test:e2e` | Testes Playwright (desktop e mobile) contra o build de produção |
+| `npm run e2e` (ou `test:e2e`) | Testes Playwright (desktop e mobile) contra o build de produção |
 | `npm run test:e2e:update` | Regrava as baselines de regressão visual |
 | `npm run test:report` | Abre o relatório HTML do último `test:e2e` |
 | `npm run lighthouse` | Lighthouse CI: início e detalhe, mobile e desktop, 3 execuções, mediana (rode `npm run build` antes) |
